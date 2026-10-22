@@ -1,0 +1,16 @@
+{
+  "_opis": "Model slike sa referencom (npr. Qwen-Image-Edit). Brojevi čvorova su primer.",
+  "slots": {
+    "prompt": { "node": "6", "input": "text" },
+    "negative": { "node": "7", "input": "text" },
+    "reference": { "node": "10", "input": "image" },
+    "seed": { "node": "3", "input": "seed" },
+    "width": { "node": "5", "input": "width" },
+    "height": { "node": "5", "input": "height" },
+    "filename_prefix": { "node": "9", "input": "filename_prefix" }
+  },
+  "required": ["prompt"],
+  "output_node": "9",
+  "output_ext": [".png"],
+  "size_multiple": 16
+}

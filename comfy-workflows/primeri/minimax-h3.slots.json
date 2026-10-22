@@ -1,0 +1,20 @@
+{
+  "_opis": "MiniMax H3, referenca lika u video (Ingredients obrazac). Brojevi čvorova su primer.",
+  "slots": {
+    "prompt": { "node": "6", "input": "text" },
+    "reference": { "node": "12", "input": "image" },
+    "seed": { "node": "20", "input": "seed" },
+    "width": { "node": "20", "input": "width" },
+    "height": { "node": "20", "input": "height" },
+    "length_seconds": { "node": "20", "input": "duration" },
+    "fps": { "node": "30", "input": "frame_rate" },
+    "filename_prefix": { "node": "30", "input": "filename_prefix" }
+  },
+  "required": ["prompt", "reference"],
+  "output_node": "30",
+  "output_ext": [".mp4"],
+  "prompt_mode": "ingredients",
+  "frames": "exact",
+  "size_multiple": 16,
+  "max_seconds": 10
+}
