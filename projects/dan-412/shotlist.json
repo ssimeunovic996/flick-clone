@@ -1,10 +1,18 @@
 {
   "film": "dan-412",
   "title": "Day 412",
-  "format": { "aspect": "9:16", "fps": 24, "resolution": [720, 1280], "keep_clip_audio": true },
+  "format": {
+    "aspect": "9:16",
+    "fps": 24,
+    "resolution": [
+      720,
+      1280
+    ],
+    "keep_clip_audio": true
+  },
   "style": "cinematic sci-fi realism, anamorphic lens look, dusty orange Martian light, fine film grain",
   "negative": "blurry, distorted hands, extra fingers, cartoon, text, watermark, subtitles, logo",
-  "default_model": "ltx-i2v",
+  "default_model": "minimax-h3",
   "image_workflow": "slika",
   "narrator_voice_id": "ELEVENLABS_VOICE_ID_ASTRONAUTKINJE",
   "continuity": [
@@ -24,10 +32,21 @@
       "id": "s01",
       "duration": 5,
       "location_description": "vast red Martian desert at sunrise, rocky dunes, the astronaut small in the lower third of the frame, huge pink sky above",
-      "characters": ["astronautkinja"],
-      "camera": { "shot": "wide", "move": "dolly_in", "lens_mm": 24 },
+      "characters": [
+        "astronautkinja"
+      ],
+      "camera": {
+        "shot": "wide",
+        "move": "dolly_in",
+        "lens_mm": 24
+      },
       "action": "0-2 s: the astronaut kneels in the red sand; 2-5 s: she presses a tiny green sprout into the soil and gently pats the sand around it",
-      "dialogue": [{ "who": "narrator", "text": "Day four hundred twelve. First plant on Mars." }],
+      "dialogue": [
+        {
+          "who": "narrator",
+          "text": "Day four hundred twelve. First plant on Mars."
+        }
+      ],
       "audio_start": 0.5,
       "status": "todo",
       "takes": []
@@ -37,9 +56,18 @@
       "duration": 5,
       "location_description": "macro view at ground level on the red Martian surface",
       "characters": [],
-      "camera": { "shot": "insert", "move": "rack_focus", "lens_mm": 85 },
+      "camera": {
+        "shot": "insert",
+        "move": "rack_focus",
+        "lens_mm": 85
+      },
       "action": "0-2 s: the tiny green sprout is in sharp focus with a white and orange gloved hand resting beside it, far behind it a blurry red shape in the soft orange background; 2-4 s: focus shifts to the background and reveals a tall blooming red flower next to an old rusty watering can half buried in the sand; 4-5 s: the gloved hand freezes",
-      "dialogue": [{ "who": "narrator", "text": "...Or not." }],
+      "dialogue": [
+        {
+          "who": "narrator",
+          "text": "...Or not."
+        }
+      ],
       "audio_start": 3.6,
       "status": "todo",
       "takes": []

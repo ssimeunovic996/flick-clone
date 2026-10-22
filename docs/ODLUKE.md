@@ -22,3 +22,5 @@ Svaka odluka: datum, šta, zašto. Nova odluka koja menja staru ide ispod, a sta
 - **`.ops.json` koristi three.js koordinate** (Y gore, metri, stepeni); Blender skripta ih pretvara. Razlog: Faza 4 i Flick-ov format su u three.js.
 - **Mapa dubine: bela blizu, crna daleko, raspon meren probnim renderom i fiksan za ceo kadar.** Podrazumevano `inverse` (kao Depth Anything); `linear` je opcija ako LTX Union bolje radi sa njom.
 - **Figure likova su za sada lutke od primitiva** (stoji, sedi). Rigovana lutka sa animacijama (Mixamo) ostaje za korak 2.2 ako blokiranje bez nje ne bude dovoljno.
+- **Stefan: video ide na MiniMax H3 sa LoRA od 4 koraka** (već instaliran kod njega). To je `minimax-h3` workflow, slika u video; prvi film "Day 412" ga koristi za oba kadra. LTX-2.5 ostaje kao druga opcija (A2V za govor, kontrola iz 3D-a).
+- **Stefan: glas preko ai33**, servisa koji daje ElevenLabs preko svog API-ja. Pipeline ima podesivu adresu (`ELEVENLABS_BASE_URL`) i radi i kad servis vrati id posla umesto zvuka (`ELEVENLABS_TASK_URL`). Tačne adrese iz ai33 dokumentacije se upisuju u `.env` na Stefanovom računaru (iz oblaka sajt nije bio dostupan).

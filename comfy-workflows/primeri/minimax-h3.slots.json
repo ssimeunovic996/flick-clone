@@ -1,19 +1,20 @@
 {
-  "_opis": "MiniMax H3, referenca lika u video (Ingredients obrazac). Brojevi čvorova su primer.",
+  "_opis": "MiniMax H3 sa LoRA od 4 koraka, slika u video (glavni model za Day 412). Brojevi čvorova su primer. Proveri u izvezenom workflow-u da li čvor za dužinu traži frejmove (tada frames: exact ili 4k+1, kako traži čvor) ili sekunde (tada slot length_seconds). Koraci (4) i cfg ostaju kako su u workflow-u.",
   "slots": {
     "prompt": { "node": "6", "input": "text" },
-    "reference": { "node": "12", "input": "image" },
+    "negative": { "node": "7", "input": "text" },
+    "image": { "node": "12", "input": "image" },
     "seed": { "node": "20", "input": "seed" },
-    "width": { "node": "20", "input": "width" },
-    "height": { "node": "20", "input": "height" },
-    "length_seconds": { "node": "20", "input": "duration" },
+    "width": { "node": "21", "input": "width" },
+    "height": { "node": "21", "input": "height" },
+    "frames": { "node": "21", "input": "length" },
     "fps": { "node": "30", "input": "frame_rate" },
     "filename_prefix": { "node": "30", "input": "filename_prefix" }
   },
-  "required": ["prompt", "reference"],
+  "required": ["prompt", "image"],
   "output_node": "30",
   "output_ext": [".mp4"],
-  "prompt_mode": "ingredients",
+  "prompt_mode": "i2v",
   "frames": "exact",
   "size_multiple": 16,
   "max_seconds": 10

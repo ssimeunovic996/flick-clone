@@ -12,10 +12,10 @@ Ovaj fajl Claude Code čita na početku svake sesije u folderu `D:\Flick klon`. 
 
 - RTX 5070 Ti, 16 GB VRAM; 32 GB RAM; Windows.
 - Sve radi lokalno na ovom računaru. Bez Remote Control-a i bez cloud GPU-a.
-- Video modeli: LTX-2.5 (glavni kandidat) i MiniMax H3 (Stefan ga je testirao, dobar za reference). Konačan izbor posle Faze 0, upisan u `docs/ODLUKE.md`.
+- Video modeli: **MiniMax H3 sa LoRA od 4 koraka** je Stefanov izbor (već instaliran; workflow `minimax-h3`). LTX-2.5 ostaje za A2V govor i kontrolu iz 3D-a. Detalji u `docs/ODLUKE.md`.
 - **Ne koristimo Seedance** (ni 2.5 ni druge verzije) ni ComfyUI Partner Nodes.
 - Slike: Stefanovi lokalni modeli za slike, ne Nano Banana.
-- Jedini plaćeni servis: **ElevenLabs API** (glas), poziva se direktno ključem iz `.env`.
+- Jedini plaćeni servis: **ElevenLabs glas preko ai33** (servis sa ElevenLabs API-jem), ključ i adresa u `.env` (`ELEVENLABS_API_KEY`, `ELEVENLABS_BASE_URL`, po potrebi `ELEVENLABS_TASK_URL`).
 - Ne pokreći ništa što troši novac ili kredite bez pitanja.
 
 ## Arhitektura ukratko
@@ -25,7 +25,7 @@ Detaljno u `docs/ARHITEKTURA.md`.
 1. Scenario → lista kadrova (`shotlist.json`, kadrovi od 4 do 5 s) → reference likova i lokacija.
 2. Glas: ElevenLabs → `audio/` po kadru.
 3. 3D blokiranje (Faza 2): `blender/stage.py` gradi scenu od primitiva iz `.ops.json` u Blenderu bez prozora (figure, kamere, pokreti), renderuje mapu dubine i layout video. Blender MCP je za ručnu doradu.
-4. Video: ComfyUI API, LTX-2.5 (I2V, A2V za govor, IC-LoRA Ingredients za lik, Union/Layout to Render za 3D kontrolu) ili MiniMax H3.
+4. Video: ComfyUI API, MiniMax H3 sa LoRA od 4 koraka (glavni) ili LTX-2.5 (A2V za govor, IC-LoRA Ingredients za lik, Union/Layout to Render za 3D kontrolu).
 5. Montaža: ffmpeg → `final/`.
 
 ## Kako radiš u ovom folderu

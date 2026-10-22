@@ -7,7 +7,9 @@ dodaješ bez menjanja koda.
 
 from __future__ import annotations
 
+import math
 import random
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -29,8 +31,12 @@ class ShotNotReady(RuntimeError):
 
 
 def frame_count(spec: dict[str, Any], duration: float, fps: int) -> int:
-    if spec.get("frames", "8k+1") == "8k+1":
-        return shotlist.ltx_frames(duration, fps)
+    """Pravilo iz slots fajla: "8k+1" (LTX), "4k+1" (modeli kao Wan) ili "exact"."""
+    rule = str(spec.get("frames", "8k+1")).replace(" ", "")
+    match = re.fullmatch(r"(\d+)k\+1", rule)
+    if match:
+        step = int(match.group(1))
+        return step * max(1, math.ceil(duration * fps / step)) + 1
     return max(1, round(duration * fps))
 
 
