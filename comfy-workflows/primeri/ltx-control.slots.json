@@ -1,0 +1,22 @@
+{
+  "_opis": "LTX-2.5 sa kontrolnim videom iz Blendera (depth ili layout). Brojevi čvorova su primer.",
+  "slots": {
+    "prompt": { "node": "6", "input": "text" },
+    "negative": { "node": "7", "input": "text" },
+    "control_video": { "node": "60", "input": "video" },
+    "image": { "node": "12", "input": "image" },
+    "seed": { "node": "25", "input": "noise_seed" },
+    "width": { "node": "27", "input": "width" },
+    "height": { "node": "27", "input": "height" },
+    "frames": [{ "node": "27", "input": "length" }, { "node": "60", "input": "frame_load_cap" }],
+    "fps": { "node": "41", "input": "frame_rate" },
+    "filename_prefix": { "node": "41", "input": "filename_prefix" }
+  },
+  "required": ["prompt", "control_video"],
+  "output_node": "41",
+  "output_ext": [".mp4"],
+  "prompt_mode": "control",
+  "frames": "8k+1",
+  "size_multiple": 32,
+  "max_seconds": 10
+}

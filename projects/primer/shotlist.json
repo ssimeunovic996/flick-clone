@@ -1,0 +1,110 @@
+{
+  "film": "primer",
+  "format": {
+    "aspect": "16:9",
+    "fps": 24,
+    "resolution": [
+      1280,
+      720
+    ],
+    "keep_clip_audio": true
+  },
+  "style": "cinematic realism, 35mm film look, soft warm practical light, shallow depth of field",
+  "negative": "blurry, distorted face, extra fingers, text, watermark, subtitles",
+  "default_model": "ltx-i2v",
+  "image_workflow": "slika",
+  "narrator_voice_id": "ELEVENLABS_VOICE_ID_NARATORA",
+  "continuity": [
+    "Night, rain outside the window in every shot",
+    "Warm tungsten light from the desk lamp"
+  ],
+  "characters": {
+    "mila": {
+      "name": "Mila",
+      "description": "woman in her early 30s, short black bob haircut, round glasses, mustard yellow knitted sweater, dark jeans",
+      "color": "yellow",
+      "voice_id": "ELEVENLABS_VOICE_ID_MILE"
+    },
+    "deda": {
+      "name": "Grandpa Rade",
+      "description": "man in his late 70s, white beard, flat grey cap, brown corduroy jacket over a checked shirt",
+      "color": "blue",
+      "voice_id": "ELEVENLABS_VOICE_ID_DEDE"
+    }
+  },
+  "music": {
+    "file": "audio/muzika.mp3",
+    "volume": 0.2,
+    "duck": true,
+    "fade_out": 3
+  },
+  "shots": [
+    {
+      "id": "s01",
+      "duration": 5,
+      "location_description": "small old apartment kitchen at night, rain on the window, desk lamp on the table",
+      "characters": [],
+      "camera": {
+        "shot": "wide",
+        "move": "dolly_in",
+        "lens_mm": 24
+      },
+      "action": "0-3 s: empty kitchen, rain streaks on the window; 3-5 s: the lamp flickers once",
+      "dialogue": [
+        {
+          "who": "narrator",
+          "text": "Svake noći u isto vreme, lampa bi trepnula jednom."
+        }
+      ],
+      "status": "todo",
+      "takes": []
+    },
+    {
+      "id": "s02",
+      "duration": 5,
+      "location_description": "the same kitchen, Mila sits at the table with an old radio in front of her",
+      "characters": [
+        "mila"
+      ],
+      "camera": {
+        "shot": "medium_close",
+        "move": "static",
+        "lens_mm": 50
+      },
+      "action": "0-2 s: Mila turns the radio dial slowly; 2-5 s: she freezes and looks up at the lamp",
+      "dialogue": [
+        {
+          "who": "mila",
+          "text": "Deda, opet je počelo."
+        }
+      ],
+      "model": "ltx-a2v",
+      "status": "todo",
+      "takes": []
+    },
+    {
+      "id": "s03",
+      "duration": 5,
+      "location_description": "kitchen doorway, dark hallway behind",
+      "characters": [
+        "deda",
+        "mila"
+      ],
+      "camera": {
+        "shot": "over_shoulder",
+        "move": "dolly_in",
+        "lens_mm": 35
+      },
+      "action": "0-3 s: Grandpa Rade steps into the doorway and smiles; 3-5 s: Mila turns toward him",
+      "dialogue": [
+        {
+          "who": "deda",
+          "text": "Znam. To nam se javlja tvoja baka."
+        }
+      ],
+      "model": "ltx-a2v",
+      "status": "todo",
+      "takes": []
+    }
+  ]
+}

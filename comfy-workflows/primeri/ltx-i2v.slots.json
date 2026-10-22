@@ -1,0 +1,21 @@
+{
+  "_opis": "LTX-2.5, slika u video. Brojevi čvorova su primer.",
+  "slots": {
+    "prompt": { "node": "6", "input": "text" },
+    "negative": { "node": "7", "input": "text" },
+    "image": { "node": "12", "input": "image" },
+    "seed": { "node": "25", "input": "noise_seed" },
+    "width": { "node": "27", "input": "width" },
+    "height": { "node": "27", "input": "height" },
+    "frames": { "node": "27", "input": "length" },
+    "fps": [{ "node": "40", "input": "frame_rate" }, { "node": "41", "input": "frame_rate" }],
+    "filename_prefix": { "node": "41", "input": "filename_prefix" }
+  },
+  "required": ["prompt", "image"],
+  "output_node": "41",
+  "output_ext": [".mp4"],
+  "prompt_mode": "i2v",
+  "frames": "8k+1",
+  "size_multiple": 32,
+  "max_seconds": 10
+}

@@ -24,7 +24,7 @@ Detaljno u `docs/ARHITEKTURA.md`.
 
 1. Scenario → lista kadrova (`shotlist.json`, kadrovi od 4 do 5 s) → reference likova i lokacija.
 2. Glas: ElevenLabs → `audio/` po kadru.
-3. 3D blokiranje (Faza 2): Blender preko Blender MCP-a; scena od primitiva po slici lokacije, figure, kamere, render mape dubine i playblast-a.
+3. 3D blokiranje (Faza 2): `blender/stage.py` gradi scenu od primitiva iz `.ops.json` u Blenderu bez prozora (figure, kamere, pokreti), renderuje mapu dubine i layout video. Blender MCP je za ručnu doradu.
 4. Video: ComfyUI API, LTX-2.5 (I2V, A2V za govor, IC-LoRA Ingredients za lik, Union/Layout to Render za 3D kontrolu) ili MiniMax H3.
 5. Montaža: ffmpeg → `final/`.
 
@@ -37,6 +37,9 @@ Detaljno u `docs/ARHITEKTURA.md`.
 - Pre GPU testa proveri da ComfyUI radi (`http://127.0.0.1:8188`). Meri vreme generisanja i zabeleži ga.
 - Ključevi samo u `.env` (nikad u kodu ni u git-u). `.gitignore` isključuje modele, izlaze i `.env`.
 - Gotove promptove za svaku fazu imaš u `prompts/`.
+- Repo: GitHub `ssimeunovic996/flick-clone` (privatni). Pre izmene koda pokreni `python -m pytest`; testovi ne traže GPU.
+- Pipeline: `python -m pipeline.run projects/<film> check|voice|refs|video|review|approve|assemble|all` (uputstvo u `pipeline/run.py`). Model kadra je ime workflow-a u `comfy-workflows/`.
+- Glas košta: pre `voice` ili `all` reci Stefanu koliko karaktera ide na ElevenLabs (`check` to ispisuje).
 
 ## Šta znamo o Flick-u (reverse engineering, 21. 10. 2026)
 
