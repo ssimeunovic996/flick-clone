@@ -1,0 +1,39 @@
+# Tajne
+.env
+
+# Modeli i veliki fajlovi
+*.safetensors
+*.ckpt
+*.gguf
+*.pt
+*.pth
+models/
+
+# Generisani mediji (filmovi se ne čuvaju u git-u)
+projects/*/kadrovi/
+projects/*/final/
+projects/*/audio/
+projects/_testovi/
+*.mp4
+*.mov
+*.wav
+*.mp3
+
+# Blender
+*.blend1
+*.blend2
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+
+# Sistem
+.DS_Store
+Thumbs.db
+desktop.ini
