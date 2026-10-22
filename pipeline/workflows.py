@@ -184,15 +184,18 @@ def suggest(wf: dict[str, Any]) -> dict[str, Any]:
             out = nid
     if "prompt" not in slots:
         for nid, node in wf.items():
-            if isinstance(node.get("inputs", {}).get("text"), str):
-                add("prompt", nid, "text")
+            inputs = node.get("inputs", {})
+            key = next((k for k in ("text", "prompt") if isinstance(inputs.get(k), str)), None)
+            if key:
+                add("prompt", nid, key)
                 break
+    minimax = any(str(n.get("class_type", "")).startswith("MiniMaxH3") for n in wf.values())
     result: dict[str, Any] = {
         "slots": {k: v[0] if len(v) == 1 else v for k, v in slots.items()},
         "required": [s for s in ("prompt", "image", "audio", "control_video") if s in slots],
         "output_node": out,
         "prompt_mode": "i2v",
-        "frames": "8k+1",
+        "frames": "17k+5" if minimax else "8k+1",  # MiniMax H3 traži 17k+5 frejmova
         "size_multiple": 32,
         "max_seconds": 10,
     }

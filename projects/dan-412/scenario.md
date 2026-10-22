@@ -25,7 +25,7 @@ Astronautkinja na Marsu posadi prvu biljku i to javi bazi. Kamera izoštri pozad
 
 1. Izaberi miran ženski ElevenLabs glas (preko ai33) i upiši njegov ID umesto `ELEVENLABS_VOICE_ID_ASTRONAUTKINJE`. Ukupno je 55 karaktera teksta.
 2. U `.env` ai33 ključ i adresa njihovog API-ja (`ELEVENLABS_BASE_URL`, po potrebi `ELEVENLABS_TASK_URL`; vidi `.env.example`).
-3. Workflow-i `slika` i `minimax-h3` povezani (tvoj MiniMax H3 workflow sa LoRA od 4 koraka, izvezen u API formatu; uputstvo u `comfy-workflows/README.md`).
+3. Workflow `minimax-h3` je gotov (napravljen po tvom "H3 MAIN"). Fali još `slika` za početne slike kadrova (uputstvo u `comfy-workflows/README.md`).
 4. Zatim:
    ```
    python -m pipeline.run projects/dan-412 check

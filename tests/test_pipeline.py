@@ -228,6 +228,7 @@ def test_voice_service_failed_task(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize("rule,seconds,fps,frames", [
     ("8k+1", 5, 24, 121), ("4k+1", 5, 24, 121), ("4k+1", 6, 25, 153), ("exact", 5, 24, 120), ("exact", 6, 25, 150),
+    ("17k+5", 5, 24, 124), ("17k+5", 4, 24, 107), ("17k+5", 0.1, 24, 5),
 ])
 def test_frame_rules(rule, seconds, fps, frames):
     from pipeline import gen_video

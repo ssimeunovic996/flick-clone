@@ -88,3 +88,32 @@ def test_example_slots_are_well_formed():
         spec = json.loads(path.read_text(encoding="utf-8"))
         assert set(spec["slots"]) <= workflows.KNOWN_SLOTS, path.name
         assert set(spec["required"]) <= set(spec["slots"]), path.name
+
+
+def test_minimax_h3_workflow_fills_real_nodes():
+    # pravi workflow za Stefanov MiniMax H3 (LoRA od 4 koraka): 9:16 i 5 s daju 736x1280 i 124 frejma
+    from pathlib import Path
+
+    from pipeline import gen_video, shotlist
+
+    wf, spec = workflows.load("minimax-h3")
+    w, h = (shotlist.snap(v, spec["size_multiple"]) for v in (720, 1280))
+    values = {"prompt": "a sprout on Mars", "image": Path("s01.png"), "seed": 7, "width": w, "height": h,
+              "frames": gen_video.frame_count(spec, 5, 24), "fps": 24, "filename_prefix": "flick/dan-412/s01"}
+    filled = workflows.apply(wf, spec, values, uploader=lambda p: f"flick/{p.name}")
+    i2v, scale, save = filled["9"]["inputs"], filled["8"]["inputs"], filled["17"]["inputs"]
+    assert (i2v["width"], i2v["height"], i2v["length"]) == (736, 1280, 124)
+    assert (scale["width"], scale["height"]) == (736, 1280)
+    assert i2v["prompt"] == "a sprout on Mars" and filled["7"]["inputs"]["image"] == "flick/s01.png"
+    assert filled["10"]["inputs"]["noise_seed"] == 7
+    assert save["filename_prefix"] == "flick/dan-412/s01" and save["frame_rate"] == 24
+    assert "4step" in filled["2"]["inputs"]["lora_name"]
+
+
+def test_suggest_minimax_h3():
+    wf, _ = workflows.load("minimax-h3")
+    s = workflows.suggest(wf)
+    assert s["frames"] == "17k+5"
+    assert s["slots"]["prompt"] == {"node": "9", "input": "prompt"}
+    assert s["slots"]["image"] == {"node": "7", "input": "image"}
+    assert s["output_node"] == "17"

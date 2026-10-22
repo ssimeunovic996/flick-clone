@@ -27,7 +27,8 @@ Ažurira se posle svakog koraka: datum, šta je urađeno, gde su fajlovi, izmere
 - [x] 1.1 Format `shotlist.json` sa proverom (`pipeline/shotlist.py`), primer u `projects/primer/`
 - [x] 1.2 Skripte napisane i testirane bez GPU-a: `pipeline/` (comfy_client, gen_refs, gen_voice, gen_video, review, assemble, run)
 - [x] 1.3 Šablon prompta (`pipeline/prompts.py`, opis u `pipeline/prompt_template.md`)
-- [ ] 1.2b Workflow-i povezani: `comfy-workflows/<ime>.api.json` + `.slots.json` za `slika` i `minimax-h3` (LoRA od 4 koraka), kasnije `ltx-i2v` i `ltx-a2v`; `python -m pipeline.run projects/primer check` prolazi
+- [x] 1.2b-1 2026-10-22: `comfy-workflows/minimax-h3.api.json` + `.slots.json` (MiniMax H3, LoRA od 4 koraka), napravljen po Stefanovom "H3 MAIN" i proveren na njegovom ComfyUI-ju (`comfy validate`: bez grešaka). Generisanje još nije pušteno (vreme: ___, VRAM: ___)
+- [ ] 1.2b-2 Workflow `slika` (početne slike i reference); kasnije `ltx-i2v` i `ltx-a2v`; `python -m pipeline.run projects/dan-412 check` prolazi
 - [ ] 1.2c Prvi pravi test na GPU-u: jedan kadar iz `projects/primer` (vreme: ___, VRAM: ___)
 - [x] 1.4a 2026-10-22: Scenario i `shotlist.json` za prvi film "Day 412" (`projects/dan-412/`): 10 s, 9:16 za Shorts, 2 kadra `minimax-h3` (LoRA od 4 koraka), glas preko radija (55 karaktera, ElevenLabs preko ai33). Fali ID glasa i ai33 adresa u `.env`
 - [ ] 1.4 Prvi film u `projects/dan-412/final/film.mp4` (vreme po kadru: ___, VRAM: ___)
