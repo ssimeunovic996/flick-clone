@@ -211,6 +211,75 @@ def test_voice_service_with_task_polling(tmp_path, monkeypatch):
     assert [c[0] for c in calls] == ["POST", "GET", "GET", "GET"]
 
 
+def test_ai33_v3_text_to_speech(tmp_path, monkeypatch):
+    """ai33: form polja na /v3/text-to-speech, glas dobija prefiks, posao se proverava na /v1/task."""
+    mp3 = make_audio(tmp_path / "glas.mp3", 0.5)
+    calls = []
+
+    def post(url, headers=None, files=None, timeout=None):
+        calls.append(("POST", url, headers, files))
+        return FakeResponse(payload={"success": True, "task_id": "t-7"})
+
+    def get(url, headers=None, timeout=None):
+        calls.append(("GET", url, headers, None))
+        if url == "https://api.ai33.pro/v1/task/t-7":
+            return FakeResponse(payload={"id": "t-7", "status": "done", "progress": 100,
+                                         "metadata": {"audio_url": "https://cdn.ai33.test/t-7.mp3"}})
+        assert url == "https://cdn.ai33.test/t-7.mp3"
+        return FakeResponse(mp3.read_bytes())
+
+    monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(post=post, get=get))
+    settings = ai33_settings(elevenlabs_base_url="https://api.ai33.pro", elevenlabs_task_url=None)
+    dest = gen_voice.tts("Day four hundred twelve.", "21m00Tcm4TlvDq8ikWAM", settings, tmp_path / "o.mp3", poll=0)
+    assert dest.read_bytes() == mp3.read_bytes()
+    method, url, headers, files = calls[0]
+    assert url == "https://api.ai33.pro/v3/text-to-speech"
+    assert headers == {"xi-api-key": "k"}
+    assert files["voice_id"] == (None, "elevenlabs_21m00Tcm4TlvDq8ikWAM")
+    assert files["text"] == (None, "Day four hundred twelve.")
+    assert [c[0] for c in calls] == ["POST", "GET", "GET"]
+
+
+def test_ai33_keeps_provider_prefix_and_strips_version(tmp_path, monkeypatch):
+    sent = {}
+
+    def post(url, headers=None, files=None, timeout=None):
+        sent.update(url=url, voice=files["voice_id"][1])
+        return FakeResponse(payload={"success": True, "task_id": "t-8"})
+
+    get = lambda url, headers=None, timeout=None: FakeResponse(payload={"status": "error", "error_message": "no credits"})  # noqa: E731
+    monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(post=post, get=get))
+    settings = ai33_settings(elevenlabs_base_url="https://api.ai33.pro/v1", elevenlabs_task_url=None)
+    with pytest.raises(gen_voice.VoiceError, match="no credits"):
+        gen_voice.tts("Or not.", "minimax_glas", settings, tmp_path / "o.mp3", poll=0)
+    assert sent == {"url": "https://api.ai33.pro/v3/text-to-speech", "voice": "minimax_glas"}
+
+
+def test_ai33_rejected_text_explains(tmp_path, monkeypatch):
+    post = lambda url, headers=None, files=None, timeout=None: FakeResponse(payload={"success": False, "message": "bad voice"})  # noqa: E731
+    monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(post=post, get=None))
+    settings = ai33_settings(elevenlabs_base_url="https://api.ai33.pro", elevenlabs_task_url=None)
+    with pytest.raises(gen_voice.VoiceError, match="bad voice"):
+        gen_voice.tts("Or not.", "x", settings, tmp_path / "o.mp3", poll=0)
+
+
+def test_ai33_credits_and_voices(monkeypatch):
+    seen = []
+
+    def get(url, params=None, headers=None, timeout=None):
+        seen.append((url, params))
+        if url.endswith("/v1/credits"):
+            return FakeResponse(payload={"success": True, "credits": 12345})
+        return FakeResponse(payload={"success": True, "data": [{"voice_id": "elevenlabs_a", "name": "Rachel"}]})
+
+    monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(get=get))
+    settings = ai33_settings(elevenlabs_base_url="https://api.ai33.pro")
+    assert gen_voice.is_ai33(settings) and not gen_voice.is_ai33(ai33_settings())
+    assert gen_voice.ai33_credits(settings) == 12345
+    assert gen_voice.ai33_voices(settings, "calm")[0]["name"] == "Rachel"
+    assert seen[1] == ("https://api.ai33.pro/v3/voices", {"provider": "elevenlabs", "page_size": 30, "search": "calm"})
+
+
 def test_voice_service_task_without_task_url_explains(tmp_path, monkeypatch):
     post = lambda *a, **k: FakeResponse(payload={"task_id": "t-1"})  # noqa: E731
     monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(post=post, get=None))

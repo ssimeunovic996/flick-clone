@@ -1,18 +1,25 @@
 """Glas za dijalog preko ElevenLabs API-ja: jedan WAV po kadru u audio/<kadar>.wav.
 
-Radi i sa servisima koji prodaju ElevenLabs preko svog API-ja (npr. ai33): adresa ide u
-ELEVENLABS_BASE_URL. Ako servis umesto zvuka vrati JSON, uzima se link do zvuka iz odgovora,
-a ako vrati samo id posla, čeka se na ELEVENLABS_TASK_URL (npr. https://.../task/{task_id}).
+Radi i sa servisima koji prodaju ElevenLabs preko svog API-ja: adresa ide u ELEVENLABS_BASE_URL.
+Ako servis umesto zvuka vrati JSON, uzima se link do zvuka iz odgovora, a ako vrati samo id posla,
+čeka se na ELEVENLABS_TASK_URL (npr. https://.../task/{task_id}).
+
+ai33 (ELEVENLABS_BASE_URL=https://api.ai33.pro) ima svoj v3 API: POST /v3/text-to-speech sa
+form poljima i glasom sa prefiksom (elevenlabs_<id>), pa provera posla na /v1/task/{task_id}.
+Spisak glasova: python -m pipeline.gen_voice glasovi [pretraga]
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import re
+import sys
 import tempfile
 import time
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 
@@ -22,6 +29,7 @@ from .config import Settings
 AUDIO_KEYS = ("audio_url", "url", "file_url", "output_url", "download_url")
 TASK_KEYS = ("task_id", "taskId", "id", "job_id")
 FAILED = ("failed", "error", "canceled", "cancelled")
+AI33_PREFIXES = ("elevenlabs_", "minimax_", "clone_", "edge_", "kokoro_", "vbee_", "fishaudio_")
 
 
 class VoiceError(RuntimeError):
@@ -61,6 +69,8 @@ def tts(text: str, voice_id: str, settings: Settings, dest: Path, poll: float = 
     if not settings.elevenlabs_api_key:
         raise VoiceError("ELEVENLABS_API_KEY nije podešen u .env")
     headers = {settings.elevenlabs_auth_header: settings.elevenlabs_api_key}
+    if is_ai33(settings):
+        return _tts_ai33(text, voice_id, settings, dest, headers, poll, timeout)
     r = requests.post(
         f"{settings.elevenlabs_base_url}/text-to-speech/{voice_id}",
         params={"output_format": "mp3_44100_128"},
@@ -88,6 +98,56 @@ def tts(text: str, voice_id: str, settings: Settings, dest: Path, poll: float = 
         raise VoiceError(f"preuzimanje zvuka nije uspelo: {audio.status_code}")
     dest.write_bytes(audio.content)
     return dest
+
+
+def is_ai33(settings: Settings) -> bool:
+    return (urlparse(settings.elevenlabs_base_url).hostname or "").endswith("ai33.pro")
+
+
+def _ai33_root(settings: Settings) -> str:
+    return re.sub(r"/v\d+$", "", settings.elevenlabs_base_url)
+
+
+def _tts_ai33(text: str, voice_id: str, settings: Settings, dest: Path, headers: dict[str, str],
+              poll: float, timeout: float) -> Path:
+    root = _ai33_root(settings)
+    voice = voice_id if voice_id.startswith(AI33_PREFIXES) else f"elevenlabs_{voice_id}"
+    form = {"text": text, "voice_id": voice, "speed": "1", "with_transcript": "false"}
+    # files= šalje multipart/form-data, kao curl -F iz ai33 dokumentacije
+    r = requests.post(f"{root}/v3/text-to-speech", headers=headers,
+                      files={k: (None, v) for k, v in form.items()}, timeout=120)
+    if r.status_code != 200:
+        raise VoiceError(f"ai33 je vratio {r.status_code}: {r.text[:300]}")
+    body = r.json()
+    if not body.get("task_id"):
+        raise VoiceError(f"ai33 nije prihvatio tekst: {json.dumps(body)[:300]}")
+    task_url = settings.elevenlabs_task_url or f"{root}/v1/task/{{task_id}}"
+    url = _wait_for_task(task_url.format(task_id=body["task_id"]), headers, poll, timeout)
+    audio = requests.get(url, timeout=120)
+    if audio.status_code != 200:
+        raise VoiceError(f"preuzimanje zvuka nije uspelo: {audio.status_code}")
+    dest.write_bytes(audio.content)
+    return dest
+
+
+def ai33_credits(settings: Settings) -> int | None:
+    """Preostali krediti na ai33 (besplatna provera da li ključ radi)."""
+    r = requests.get(f"{_ai33_root(settings)}/v1/credits",
+                     headers={settings.elevenlabs_auth_header: settings.elevenlabs_api_key or ""}, timeout=30)
+    if r.status_code != 200:
+        raise VoiceError(f"ai33 je vratio {r.status_code}: {r.text[:300]}")
+    return r.json().get("credits")
+
+
+def ai33_voices(settings: Settings, search: str = "", provider: str = "elevenlabs") -> list[dict[str, Any]]:
+    params = {"provider": provider, "page_size": 30}
+    if search:
+        params["search"] = search
+    r = requests.get(f"{_ai33_root(settings)}/v3/voices", params=params,
+                     headers={settings.elevenlabs_auth_header: settings.elevenlabs_api_key or ""}, timeout=30)
+    if r.status_code != 200:
+        raise VoiceError(f"ai33 je vratio {r.status_code}: {r.text[:300]}")
+    return r.json().get("data", [])
 
 
 def _is_json(r) -> bool:
@@ -155,3 +215,16 @@ def generate(data: dict[str, Any], project: Path, settings: Settings,
         if seconds > shot["duration"]:
             warnings.append(f"kadar {shot['id']}: glas traje {seconds:.1f} s, a kadar {shot['duration']} s")
     return warnings
+
+
+if __name__ == "__main__":
+    from .config import utf8_output
+
+    utf8_output()
+    if len(sys.argv) >= 2 and sys.argv[1] == "glasovi":
+        settings = Settings.from_env()
+        for v in ai33_voices(settings, " ".join(sys.argv[2:])):
+            print(f"{v.get('voice_id')}  {v.get('name')}  {v.get('gender', '')}  {v.get('language', '')}  "
+                  f"{v.get('preview_url', '')}")
+    else:
+        print("upotreba: python -m pipeline.gen_voice glasovi [pretraga]   (ai33 spisak ElevenLabs glasova)")

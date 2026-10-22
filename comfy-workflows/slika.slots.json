@@ -1,0 +1,47 @@
+{
+  "_opis": "Slike za film: Qwen Image 2.1 sa Lightning LoRA od 4 koraka, kao Stefanov qwen21_edit_lightning. Bez reference pravi sliku iz teksta (reference sheet lika); sa referencom (sheet lika) pravi početnu sliku kadra sa istim likom.",
+  "slots": {
+    "prompt": {
+      "node": "7",
+      "input": "prompt"
+    },
+    "negative": {
+      "node": "7",
+      "input": "negative_prompt"
+    },
+    "reference": {
+      "node": "6",
+      "input": "image"
+    },
+    "seed": {
+      "node": "9",
+      "input": "seed"
+    },
+    "width": {
+      "node": "8",
+      "input": "width"
+    },
+    "height": {
+      "node": "8",
+      "input": "height"
+    },
+    "filename_prefix": {
+      "node": "11",
+      "input": "filename_prefix"
+    }
+  },
+  "unlink_if_empty": {
+    "reference": {
+      "node": "7",
+      "input": "images.image_1"
+    }
+  },
+  "required": [
+    "prompt"
+  ],
+  "output_node": "11",
+  "output_ext": [
+    ".png"
+  ],
+  "size_multiple": 32
+}

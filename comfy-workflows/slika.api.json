@@ -1,0 +1,147 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Qwen Image 2.1"
+    },
+    "inputs": {
+      "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "2": {
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "Lightning LoRA od 4 koraka"
+    },
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "lora_name": "Qwen-Image-2.1-Lightning-4step-lightx2v.safetensors",
+      "strength_model": 1.0
+    }
+  },
+  "3": {
+    "class_type": "QwenImage21Cache",
+    "inputs": {
+      "model": [
+        "2",
+        0
+      ],
+      "device": "auto",
+      "dtype": "default"
+    }
+  },
+  "4": {
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Qwen3-VL 8B tekst enkoder"
+    },
+    "inputs": {
+      "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    }
+  },
+  "5": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+    }
+  },
+  "6": {
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Referenca (reference sheet lika), opciono"
+    },
+    "inputs": {
+      "image": "flick/ref.png"
+    }
+  },
+  "7": {
+    "class_type": "TextEncodeQwenImage21",
+    "_meta": {
+      "title": "Prompt (i referenca kad postoji)"
+    },
+    "inputs": {
+      "clip": [
+        "4",
+        0
+      ],
+      "vae": [
+        "5",
+        0
+      ],
+      "images.image_1": [
+        "6",
+        0
+      ],
+      "prompt": "",
+      "negative_prompt": "",
+      "resolution": 1024
+    }
+  },
+  "8": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {
+      "width": 736,
+      "height": 1280,
+      "batch_size": 1
+    }
+  },
+  "9": {
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "4 koraka, cfg 1 (kao u tvom qwen21_edit_lightning)"
+    },
+    "inputs": {
+      "model": [
+        "3",
+        0
+      ],
+      "positive": [
+        "7",
+        0
+      ],
+      "negative": [
+        "7",
+        1
+      ],
+      "latent_image": [
+        "8",
+        0
+      ],
+      "seed": 1,
+      "steps": 4,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0
+    }
+  },
+  "10": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": [
+        "9",
+        0
+      ],
+      "vae": [
+        "5",
+        0
+      ]
+    }
+  },
+  "11": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "10",
+        0
+      ],
+      "filename_prefix": "flick/film/slika"
+    }
+  }
+}

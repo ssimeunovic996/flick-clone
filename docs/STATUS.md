@@ -27,9 +27,10 @@ Ažurira se posle svakog koraka: datum, šta je urađeno, gde su fajlovi, izmere
 - [x] 1.1 Format `shotlist.json` sa proverom (`pipeline/shotlist.py`), primer u `projects/primer/`
 - [x] 1.2 Skripte napisane i testirane bez GPU-a: `pipeline/` (comfy_client, gen_refs, gen_voice, gen_video, review, assemble, run)
 - [x] 1.3 Šablon prompta (`pipeline/prompts.py`, opis u `pipeline/prompt_template.md`)
-- [x] 1.2b-1 2026-10-22: `comfy-workflows/minimax-h3.api.json` + `.slots.json` (MiniMax H3, LoRA od 4 koraka), napravljen po Stefanovom "H3 MAIN" i proveren na njegovom ComfyUI-ju (`comfy validate`: bez grešaka). Generisanje još nije pušteno (vreme: ___, VRAM: ___)
-- [ ] 1.2b-2 Workflow `slika` (početne slike i reference); kasnije `ltx-i2v` i `ltx-a2v`; `python -m pipeline.run projects/dan-412 check` prolazi
-- [ ] 1.2c Prvi pravi test na GPU-u: jedan kadar iz `projects/primer` (vreme: ___, VRAM: ___)
+- [x] 1.2b-1 2026-10-22: `comfy-workflows/minimax-h3.api.json` + `.slots.json` (MiniMax H3, LoRA od 4 koraka), napravljen po Stefanovom "H3 MAIN" i proveren na njegovom ComfyUI-ju (`comfy validate`: bez grešaka)
+- [x] 1.2b-2 2026-10-22: Workflow `slika` (Qwen Image 2.1 int8 + Lightning LoRA od 4 koraka, 736x1280): reference sheet lika ~11 s, prva početna slika ~13 s sa učitavanjem modela, svaka sledeća 2 do 3 s. Kasnije `ltx-i2v` i `ltx-a2v`
+- [x] 1.2c 2026-10-22: Prvi pravi test na GPU-u, kadar s01 filma "Day 412": MiniMax H3, 736x1280, 124 frejma (5,17 s) sa H3 zvukom, 8 koraka. Vreme: oko 3 do 3,5 min po kadru, sa učitavanjem modela. VRAM: tokom generisanja ~1 GB slobodno od 16 (pun), RAM ~3,7 GB slobodno od 32. Fajl: `projects/dan-412/kadrovi/s01_t1.mp4`
+- [x] 1.2d 2026-10-22: ai33 glas u pipeline-u (v3 API, provera posla, krediti u `check`, spisak glasova `python -m pipeline.gen_voice glasovi`). Fali izbor glasa
 - [x] 1.4a 2026-10-22: Scenario i `shotlist.json` za prvi film "Day 412" (`projects/dan-412/`): 10 s, 9:16 za Shorts, 2 kadra `minimax-h3` (LoRA od 4 koraka), glas preko radija (55 karaktera, ElevenLabs preko ai33). Fali ID glasa i ai33 adresa u `.env`
 - [ ] 1.4 Prvi film u `projects/dan-412/final/film.mp4` (vreme po kadru: ___, VRAM: ___)
 

@@ -47,6 +47,11 @@ def cmd_check(data, project, settings, args) -> int:
           f"({settings.elevenlabs_base_url})")
     if voice_shots and not settings.elevenlabs_api_key:
         print("  ELEVENLABS_API_KEY nije podešen u .env")
+    if settings.elevenlabs_api_key and gen_voice.is_ai33(settings):
+        try:
+            print(f"  ai33 krediti: {gen_voice.ai33_credits(settings)}")
+        except Exception as e:  # provera ključa ne sme da sruši check
+            print(f"  ai33 krediti: provera nije uspela ({e})")
     try:
         stats = ComfyClient(settings.comfyui_url).system_stats()
         dev = (stats.get("devices") or [{}])[0]

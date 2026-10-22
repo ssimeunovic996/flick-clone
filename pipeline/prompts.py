@@ -7,6 +7,7 @@ na engleskom, pa su i šabloni na engleskom.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from . import shotlist
@@ -96,15 +97,20 @@ def video_prompt(data: dict[str, Any], shot: dict[str, Any], mode: str = "i2v") 
     return body
 
 
-def start_frame_prompt(data: dict[str, Any], shot: dict[str, Any]) -> str:
-    """Prompt za početnu sliku kadra (prvi frejm), za modele slike."""
+def start_frame_prompt(data: dict[str, Any], shot: dict[str, Any], with_reference: bool = False) -> str:
+    """Prompt za početnu sliku kadra (prvi frejm), za modele slike. Sa referencom (reference sheet)
+    model mora da uzme lik sa sheet-a, ali da napravi jednu scenu, a ne novi sheet."""
     parts = []
+    if with_reference:
+        parts.append("Use the character from the reference image, with the exact same outfit, "
+                     "and place them in a new single scene (one image, not a reference sheet).")
     if data.get("style"):
         parts.append(f"{data['style']}.")
     if shot.get("location_description"):
         parts.append(f"{shot['location_description']}.")
     parts += character_lines(data, shot, with_colors=False)
     first_beat = shot["action"].split(";")[0].strip().rstrip(".")
+    first_beat = re.sub(r"^\d+(\.\d+)?\s*-\s*\d+(\.\d+)?\s*s:\s*", "", first_beat)  # "0-2 s:" je za video
     parts.append(f"Opening moment: {first_beat}.")
     cam = shot.get("camera", {})
     if cam.get("shot"):

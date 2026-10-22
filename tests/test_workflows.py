@@ -117,3 +117,28 @@ def test_suggest_minimax_h3():
     assert s["slots"]["prompt"] == {"node": "9", "input": "prompt"}
     assert s["slots"]["image"] == {"node": "7", "input": "image"}
     assert s["output_node"] == "17"
+
+
+def test_slika_without_reference_unlinks_image():
+    # bez reference sheet-a Qwen pravi sliku iz teksta, pa veza ka LoadImage mora da nestane
+    wf, spec = workflows.load("slika")
+    filled = workflows.apply(wf, spec, {"prompt": "astronaut", "width": 1536, "height": 1024})
+    assert "images.image_1" not in filled["7"]["inputs"]
+    assert (filled["8"]["inputs"]["width"], filled["8"]["inputs"]["height"]) == (1536, 1024)
+    assert "images.image_1" in wf["7"]["inputs"]  # original ostaje netaknut
+
+
+def test_slika_with_reference_keeps_link():
+    from pathlib import Path
+
+    wf, spec = workflows.load("slika")
+    filled = workflows.apply(wf, spec, {"prompt": "astronaut", "reference": Path("sheet.png")},
+                             uploader=lambda p: f"flick/{p.name}")
+    assert filled["7"]["inputs"]["images.image_1"] == ["6", 0]
+    assert filled["6"]["inputs"]["image"] == "flick/sheet.png"
+
+
+def test_unlink_target_must_exist():
+    spec = {"slots": {}, "unlink_if_empty": {"reference": {"node": "99", "input": "x"}}}
+    with pytest.raises(workflows.WorkflowError, match="99"):
+        workflows.check({"1": {"class_type": "X", "inputs": {}}}, spec)
