@@ -131,6 +131,26 @@ def test_video_waits_for_voice(env, capsys):
     assert data["shots"][0]["status"] == "video_ok"  # kadrovi bez a2v su urađeni
 
 
+def test_proba_is_half_size_and_kept_apart(env):
+    """Proba: pola rezolucije, posebna lista `probe`; pravi video posle uzme njen seed."""
+    project, comfy = env["project"], env["comfy"]
+    assert run.main([str(project), "refs"]) == 0
+    comfy.prompts.clear()
+    assert run.main([str(project), "video", "--shots", "s01", "--proba"]) == 0
+    (job,) = comfy.prompts
+    assert (job["27"]["inputs"]["width"], job["27"]["inputs"]["height"]) == (160, 96)
+    s01 = load(project)["shots"][0]
+    assert s01["probe"][0]["file"] == "kadrovi/proba/s01_p1.mp4" and (project / s01["probe"][0]["file"]).exists()
+    assert "takes" not in s01 and s01.get("status") != "video_ok"  # approve i montaža je ne vide
+
+    assert run.main([str(project), "video", "--shots", "s01", "--proba"]) == 0
+    assert len(comfy.prompts) == 1  # proba postoji, nova tek sa --force
+    assert run.main([str(project), "video", "--shots", "s01"]) == 0
+    s01 = load(project)["shots"][0]
+    assert (comfy.prompts[-1]["27"]["inputs"]["width"], comfy.prompts[-1]["27"]["inputs"]["height"]) == (320, 192)
+    assert s01["takes"][0]["seed"] == s01["probe"][0]["seed"] and s01["status"] == "video_ok"
+
+
 def test_end_frame_made_from_start_frame(env):
     project, comfy = env["project"], env["comfy"]
     data = load(project)

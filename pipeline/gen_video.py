@@ -3,6 +3,11 @@
 Model kadra je ime workflow-a u comfy-workflows/ (npr. "ltx-i2v" -> ltx-i2v.api.json i
 ltx-i2v.slots.json). Slots fajl kaže i kako se pravi prompt i broj frejmova, pa novi model
 dodaješ bez menjanja koda.
+
+Proba (`video --proba`): isti kadar u pola rezolucije, da se brzo vidi pokret pre pravog
+videa. Ide u `kadrovi/proba/<kadar>_p<n>.mp4` i u listu `probe` kadra, ne u `takes`, pa je
+ni `approve` ni montaža ne vide. Pravi video posle toga uzima seed poslednje probe (ako kadar
+nema svoj `seed`), ali u drugoj rezoluciji model ne ponovi isti pokret do detalja.
 """
 
 from __future__ import annotations
@@ -24,6 +29,9 @@ HINTS = {
     "control_video": "kontrolni video fali; napravi ga u Blenderu (blender/stage.py render)",
     "reference": "reference sheet lika fali; pokreni prvo `refs`",
 }
+
+
+PROBA_SCALE = 0.5
 
 
 class ShotNotReady(RuntimeError):
@@ -77,13 +85,16 @@ def shot_values(data: dict[str, Any], project: Path, shot: dict[str, Any], spec:
 
 
 def pending(data: dict[str, Any], project: Path, only: set[str] | None = None,
-            force: bool = False) -> list[dict[str, Any]]:
+            force: bool = False, proba: bool = False) -> list[dict[str, Any]]:
     out = []
     for shot in data["shots"]:
         if only and shot["id"] not in only:
             continue
-        take = shotlist.latest_take(shot)
-        done = shot.get("status") in ("video_ok", "approved") and take and (project / take["file"]).exists()
+        if proba:
+            done = any((project / p["file"]).exists() for p in shot.get("probe", []))
+        else:
+            take = shotlist.latest_take(shot)
+            done = shot.get("status") in ("video_ok", "approved") and take and (project / take["file"]).exists()
         if force or not done:
             out.append(shot)
     return out
@@ -91,20 +102,27 @@ def pending(data: dict[str, Any], project: Path, only: set[str] | None = None,
 
 def generate(data: dict[str, Any], project: Path, client: ComfyClient | None, settings: Settings,
              only: set[str] | None = None, force: bool = False, dry_run: bool = False,
-             directory: Path = WORKFLOWS_DIR, save=None, log=print) -> list[str]:
-    """Generiše kadrove kojima fali video. `save` se poziva posle svakog kadra (čuva napredak)."""
+             directory: Path = WORKFLOWS_DIR, save=None, log=print, proba: bool = False) -> list[str]:
+    """Generiše kadrove kojima fali video (ili proba, sa `proba`). `save` se poziva posle svakog
+    kadra (čuva napredak)."""
     problems: list[str] = []
     freed = False
-    for shot in pending(data, project, only, force):
+    for shot in pending(data, project, only, force, proba):
         model = shotlist.shot_model(data, shot)
         _, spec = workflows.load(model, directory)
-        seed = shot.get("seed", random.randint(0, 2**31 - 1))
+        last_probe = (shot.get("probe") or [{}])[-1]
+        seed = shot.get("seed", last_probe.get("seed", random.randint(0, 2**31 - 1)))
         try:
             values = shot_values(data, project, shot, spec, settings, seed)
         except ShotNotReady as e:
             problems.append(str(e))
             log(str(e))
             continue
+        if proba:
+            multiple = spec.get("size_multiple", 32)
+            values["width"], values["height"] = (shotlist.snap(round(v * PROBA_SCALE), multiple)
+                                                 for v in (values["width"], values["height"]))
+            values["filename_prefix"] += "_proba"
         if shot["duration"] > spec.get("max_seconds", 30):
             log(f"kadar {shot['id']}: {shot['duration']} s je duže od {spec['max_seconds']} s koliko {model} podnosi")
         if dry_run:
@@ -118,6 +136,20 @@ def generate(data: dict[str, Any], project: Path, client: ComfyClient | None, se
         if not freed:  # modeli za slike ostaju u memoriji i ne ostave mesta video modelu
             client.free()
             freed = True
+        if proba:
+            n = len(shot.get("probe", [])) + 1
+            dest = project / "kadrovi" / "proba" / f"{shot['id']}_p{n}.mp4"
+            log(f"kadar {shot['id']}: proba {n} ({model}, {values['width']}x{values['height']})")
+            seconds = jobs.run_workflow(client, model, values, dest, jobs.VIDEO_EXTS, directory)
+            shot.setdefault("probe", []).append({
+                "n": n, "file": f"kadrovi/proba/{dest.name}", "model": model, "seed": seed,
+                "size": [values["width"], values["height"]], "seconds": round(seconds, 1),
+                "created": time.strftime("%Y-%m-%d %H:%M:%S"),
+            })
+            log(f"kadar {shot['id']}: proba gotova za {seconds:.0f} s -> kadrovi/proba/{dest.name}")
+            if save:
+                save()
+            continue
         n = len(shot.get("takes", [])) + 1
         dest = project / "kadrovi" / f"{shot['id']}_t{n}.mp4"
         log(f"kadar {shot['id']}: generišem pokušaj {n} ({model})")

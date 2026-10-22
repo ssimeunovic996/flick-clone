@@ -43,12 +43,13 @@ Ažurira se posle svakog koraka: datum, šta je urađeno, gde su fajlovi, izmere
 - [ ] 2.2 Figure likova: lutke od primitiva (stoji, sedi) gotove; rigovane animacije po potrebi
 - [x] 2.3 `blender/camera_moves.py`: 16 pokreta (dolly, truck, dolly zoom, crane, pan, tilt, orbit, spirala, zoom, putanja) + drhtanje iz ruke
 - [x] 2.4 Render layout-a i dubine po kadru (8k+1 frejmova); ostaje merenje brzine na GPU-u
-- [x] 2.4b 2026-10-22: `pipeline/gen_layout.py`: korak `refs` sam renderuje layout slike iz Blendera (početak i kraj kadra, `kadrovi/layout/`), putanja do Blendera u `BLENDER` u `.env`. Proveren sa Blender 4.5.3 i 5.2.3 LTS (Stefan instalira 5.2.3)
+- [x] 2.4b 2026-10-22: `pipeline/gen_layout.py`: korak `refs` sam renderuje layout slike iz Blendera (početak i kraj kadra, `kadrovi/layout/`), putanja do Blendera u `BLENDER` u `.env`. Proveren sa Blender 4.5.3 i 5.2.3 LTS. Stefan je instalirao 5.2.3; putanja je upisana u `.env` na njegovom računaru
 - [ ] 2.5 Video iz 3D-a. Bez LTX-a ide preko slika: Blender layout → Qwen "Layout to Render" → MiniMax H3 sa početnom i krajnjom slikom. Test film `projects/radio/` (kuhinja, Mila i deda Rade, 3 kadra, 16:9 1280x736):
   - [x] Slike: Qwen ~10 s po slici (6 s kad je prompt keširan). s01 orbit: početna i krajnja iz 3D-a; s02: samo početna; s03: početna iz 3D-a, krajnja kao izmena početne
   - [x] s01 (orbit, početna + krajnja): kamera ide oko Mile kao u 3D-u, lampa trepne. `projects/radio/kadrovi/s01_t1.mp4`
   - [x] s02 (samo početna, dolly in iz prompta): Mila okreće dugme radija i progovori. s03 (početna iz 3D-a, krajnja kao izmena): Mila u prvom planu okrene glavu ka dedi u vratima
   - [x] H3 1280x736, 124 frejma: oko 2,2 do 2,6 min po kadru kad je model učitan, oko 3 min sa učitavanjem. Probni spoj: `projects/_testovi/radio/pregled_radio_s01_s02_s03.mp4`
+  - [x] Proba u pola rezolucije (`video --proba`, 640x384): 36 s umesto oko 2,5 min, pokret skoro isti kao u punom kadru (isti seed, ista početna i krajnja slika). `projects/radio/kadrovi/proba/s01_p1.mp4`
   - [ ] Glas: H3 sam pravi zvuk i govor; ElevenLabs glas (ai33) za dijaloge još nije proban
 - [ ] 2.6 MCP alati za scenu
 

@@ -4,6 +4,7 @@
     python -m pipeline.run projects/<film> voice              glas za kadrove sa dijalogom (ElevenLabs)
     python -m pipeline.run projects/<film> refs               reference sheet-ovi i početne slike
     python -m pipeline.run projects/<film> video              video za kadrove kojima fali
+    python -m pipeline.run projects/<film> video --proba      brza proba u pola rezolucije
     python -m pipeline.run projects/<film> review             frejmovi za pregled i pregled.md
     python -m pipeline.run projects/<film> approve s01 [--take 2]
     python -m pipeline.run projects/<film> assemble [--draft] montaža u final/
@@ -81,6 +82,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--force", action="store_true")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--draft", action="store_true", help="montaža i sa neodobrenim kadrovima")
+    p.add_argument("--proba", action="store_true", help="video u pola rezolucije, brza provera pokreta")
     args = p.parse_args(argv)
     utf8_output()
     args.only = set(args.shots.split(",")) if args.shots else None
@@ -140,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
                     save()
             elif step == "video":
                 problems += gen_video.generate(data, project, client, settings, args.only, args.force,
-                                               args.dry_run, settings.workflows_dir, save=save)
+                                               args.dry_run, settings.workflows_dir, save=save, proba=args.proba)
             elif step == "review" and not args.dry_run:
                 print(f"pregled: {review.build(data, project, settings, args.only).relative_to(project)}")
         if problems:

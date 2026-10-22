@@ -68,7 +68,21 @@
         }
       ],
       "start_frame": "kadrovi/start/s01.png",
-      "end_frame": "kadrovi/start/s01_kraj.png"
+      "end_frame": "kadrovi/start/s01_kraj.png",
+      "probe": [
+        {
+          "n": 1,
+          "file": "kadrovi/proba/s01_p1.mp4",
+          "model": "minimax-h3",
+          "seed": 61001,
+          "size": [
+            640,
+            384
+          ],
+          "seconds": 35.6,
+          "created": "2026-10-22 19:27:00"
+        }
+      ]
     },
     {
       "id": "s02",
