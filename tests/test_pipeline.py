@@ -234,3 +234,19 @@ def test_frame_rules(rule, seconds, fps, frames):
     from pipeline import gen_video
 
     assert gen_video.frame_count({"frames": rule}, seconds, fps) == frames
+
+
+def test_empty_env_values_use_defaults(monkeypatch):
+    # prazna linija u .env (npr. ELEVENLABS_BASE_URL=) ne sme da obriše podrazumevanu adresu
+    from pipeline import config
+
+    monkeypatch.setattr(config, "load_env", lambda path=None: None)
+    for key in ("COMFYUI_URL", "ELEVENLABS_BASE_URL", "ELEVENLABS_AUTH_HEADER", "ELEVENLABS_MODEL",
+                "ELEVENLABS_TASK_URL", "ELEVENLABS_API_KEY"):
+        monkeypatch.setenv(key, "")
+    s = config.Settings.from_env()
+    assert s.comfyui_url == "http://127.0.0.1:8188"
+    assert s.elevenlabs_base_url == "https://api.elevenlabs.io/v1"
+    assert s.elevenlabs_auth_header == "xi-api-key"
+    assert s.elevenlabs_model == "eleven_multilingual_v2"
+    assert s.elevenlabs_task_url is None and s.elevenlabs_api_key is None

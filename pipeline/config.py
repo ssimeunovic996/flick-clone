@@ -49,13 +49,13 @@ class Settings:
     def from_env(cls) -> "Settings":
         load_env()
         return cls(
-            comfyui_url=os.environ.get("COMFYUI_URL", "http://127.0.0.1:8188").rstrip("/"),
+            comfyui_url=(os.environ.get("COMFYUI_URL") or "http://127.0.0.1:8188").rstrip("/"),
             elevenlabs_api_key=os.environ.get("ELEVENLABS_API_KEY") or None,
-            elevenlabs_model=os.environ.get("ELEVENLABS_MODEL", "eleven_multilingual_v2"),
+            elevenlabs_model=os.environ.get("ELEVENLABS_MODEL") or "eleven_multilingual_v2",
             ffmpeg=os.environ.get("FFMPEG", "ffmpeg"),
             ffprobe=os.environ.get("FFPROBE", "ffprobe"),
             workflows_dir=Path(os.environ.get("FLICK_WORKFLOWS_DIR", WORKFLOWS_DIR)),
-            elevenlabs_base_url=os.environ.get("ELEVENLABS_BASE_URL", "https://api.elevenlabs.io/v1").rstrip("/"),
+            elevenlabs_base_url=(os.environ.get("ELEVENLABS_BASE_URL") or "https://api.elevenlabs.io/v1").rstrip("/"),
             elevenlabs_task_url=os.environ.get("ELEVENLABS_TASK_URL") or None,
-            elevenlabs_auth_header=os.environ.get("ELEVENLABS_AUTH_HEADER", "xi-api-key"),
+            elevenlabs_auth_header=os.environ.get("ELEVENLABS_AUTH_HEADER") or "xi-api-key",
         )

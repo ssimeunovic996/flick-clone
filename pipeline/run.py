@@ -43,7 +43,8 @@ def cmd_check(data, project, settings, args) -> int:
         print(f"  workflow za slike: {e}")
     voice_shots = gen_voice.pending(data, project, args.only)
     chars = gen_voice.characters_needed(voice_shots)
-    print(f"  glas: {len(voice_shots)} kadrova čeka, {chars} karaktera teksta za ElevenLabs")
+    print(f"  glas: {len(voice_shots)} kadrova čeka, {chars} karaktera teksta za ElevenLabs "
+          f"({settings.elevenlabs_base_url})")
     if voice_shots and not settings.elevenlabs_api_key:
         print("  ELEVENLABS_API_KEY nije podešen u .env")
     try:
