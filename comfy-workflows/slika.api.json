@@ -80,7 +80,11 @@
       ],
       "prompt": "",
       "negative_prompt": "",
-      "resolution": 1024
+      "resolution": 1024,
+      "images.image_2": [
+        "12",
+        0
+      ]
     }
   },
   "8": {
@@ -142,6 +146,15 @@
         0
       ],
       "filename_prefix": "flick/film/slika"
+    }
+  },
+  "12": {
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Druga slika (opciono)"
+    },
+    "inputs": {
+      "image": "flick/layout.png"
     }
   }
 }

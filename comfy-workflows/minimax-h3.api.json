@@ -111,7 +111,11 @@
       "prompt": "",
       "width": 736,
       "height": 1280,
-      "length": 124
+      "length": 124,
+      "last_frame": [
+        "19",
+        0
+      ]
     }
   },
   "10": {
@@ -232,6 +236,31 @@
       "trim_to_audio": false,
       "pingpong": false,
       "save_output": true
+    }
+  },
+  "18": {
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Krajnja slika kadra (opciono)"
+    },
+    "inputs": {
+      "image": "flick/end.png"
+    }
+  },
+  "19": {
+    "class_type": "ImageScale",
+    "_meta": {
+      "title": "Krajnja slika na veličinu videa"
+    },
+    "inputs": {
+      "image": [
+        "18",
+        0
+      ],
+      "upscale_method": "lanczos",
+      "width": 736,
+      "height": 1280,
+      "crop": "center"
     }
   }
 }

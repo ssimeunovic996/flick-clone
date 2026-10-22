@@ -1,0 +1,169 @@
+{
+  "film": "radio",
+  "title": "Radio",
+  "format": {
+    "aspect": "16:9",
+    "fps": 24,
+    "resolution": [
+      1280,
+      720
+    ],
+    "keep_clip_audio": true
+  },
+  "style": "cinematic realism, 35mm film look, soft warm practical light, shallow depth of field",
+  "negative": "blurry, distorted face, extra fingers, text, watermark, subtitles",
+  "default_model": "minimax-h3",
+  "image_workflow": "slika",
+  "continuity": [
+    "Night, rain outside the window in every shot",
+    "Warm tungsten light from the desk lamp",
+    "The desk lamp has a cone-shaped cream fabric shade on a thin dark stand",
+    "Plain beige walls and a worn dark wooden table"
+  ],
+  "characters": {
+    "mila": {
+      "name": "Mila",
+      "description": "woman in her early 30s, short black bob haircut, round glasses, mustard yellow knitted sweater, dark jeans",
+      "color": "yellow",
+      "ref": "likovi/mila_sheet.png"
+    },
+    "deda": {
+      "name": "Grandpa Rade",
+      "description": "man in his late 70s, white beard, flat grey cap, brown corduroy jacket over a checked shirt",
+      "color": "blue",
+      "ref": "likovi/deda_sheet.png"
+    }
+  },
+  "shots": [
+    {
+      "id": "s01",
+      "duration": 5,
+      "location_description": "small old apartment kitchen at night, rain streaks on the dark window, warm desk lamp on the wooden table",
+      "characters": [
+        "mila"
+      ],
+      "camera": {
+        "shot": "wide",
+        "move": "orbit",
+        "lens_mm": 24
+      },
+      "action": "0-3 s: Mila sits alone at the kitchen table in the lamp light while rain runs down the window; 3-5 s: the lamp flickers once and she glances up at it",
+      "dialogue": [],
+      "layout": {
+        "ops": "lokacije/kuhinja.ops.json",
+        "start": "kadrovi/layout/s01_start.png",
+        "end": "kadrovi/layout/s01_end.png"
+      },
+      "status": "video_ok",
+      "takes": [
+        {
+          "n": 1,
+          "file": "kadrovi/s01_t1.mp4",
+          "model": "minimax-h3",
+          "seed": 61001,
+          "seconds": 180,
+          "prompt": "Style: cinematic realism, 35mm film look, soft warm practical light, shallow depth of field. Mila: woman in her early 30s, short black bob haircut, round glasses, mustard yellow knitted sweater, dark jeans. Location: small old apartment kitchen at night, rain streaks on the dark window, warm desk lamp on the wooden table. Camera: wide shot, orbit around the subject, 24mm lens. Action: 0-3 s: Mila sits alone at the kitchen table in the lamp light while rain runs down the window; 3-5 s: the lamp flickers once and she glances up at it. Continuity: Night, rain outside the window in every shot; Warm tungsten light from the desk lamp; The desk lamp has a cone-shaped cream fabric shade on a thin dark stand; Plain beige walls and a worn dark wooden table; Faces, hair and clothing stay identical to the references.",
+          "created": "2026-10-22 19:10:00",
+          "note": "orbit iz 3D-a: početna + krajnja slika iz layout-a"
+        }
+      ],
+      "start_frame": "kadrovi/start/s01.png",
+      "end_frame": "kadrovi/start/s01_kraj.png",
+      "probe": [
+        {
+          "n": 1,
+          "file": "kadrovi/proba/s01_p1.mp4",
+          "model": "minimax-h3",
+          "seed": 61001,
+          "size": [
+            640,
+            384
+          ],
+          "seconds": 35.6,
+          "created": "2026-10-22 19:27:00"
+        }
+      ]
+    },
+    {
+      "id": "s02",
+      "duration": 5,
+      "location_description": "the same kitchen, Mila at the table with an old wooden radio in front of her",
+      "characters": [
+        "mila"
+      ],
+      "camera": {
+        "shot": "medium_close",
+        "move": "dolly_in",
+        "lens_mm": 50
+      },
+      "action": "0-2 s: Mila slowly turns the radio dial; 2-5 s: she freezes and looks up at the lamp",
+      "dialogue": [
+        {
+          "who": "mila",
+          "text": "Deda, opet je počelo."
+        }
+      ],
+      "layout": {
+        "ops": "lokacije/kuhinja.ops.json",
+        "start": "kadrovi/layout/s02_start.png",
+        "end_frame": false
+      },
+      "status": "video_ok",
+      "takes": [
+        {
+          "n": 1,
+          "file": "kadrovi/s02_t1.mp4",
+          "model": "minimax-h3",
+          "seed": 61002,
+          "seconds": 150,
+          "prompt": "Style: cinematic realism, 35mm film look, soft warm practical light, shallow depth of field. Mila: woman in her early 30s, short black bob haircut, round glasses, mustard yellow knitted sweater, dark jeans. Location: the same kitchen, Mila at the table with an old wooden radio in front of her. Camera: medium close-up, slow dolly in, 50mm lens. Action: 0-2 s: Mila slowly turns the radio dial; 2-5 s: she freezes and looks up at the lamp. Mila says: \"Deda, opet je počelo.\" Continuity: Night, rain outside the window in every shot; Warm tungsten light from the desk lamp; The desk lamp has a cone-shaped cream fabric shade on a thin dark stand; Plain beige walls and a worn dark wooden table; Faces, hair and clothing stay identical to the references.",
+          "created": "2026-10-22 19:10:00",
+          "note": "samo početna slika, dolly in iz prompta"
+        }
+      ],
+      "start_frame": "kadrovi/start/s02.png"
+    },
+    {
+      "id": "s03",
+      "duration": 5,
+      "location_description": "kitchen doorway, dark hallway behind",
+      "characters": [
+        "deda",
+        "mila"
+      ],
+      "camera": {
+        "shot": "medium",
+        "move": "dolly_in",
+        "lens_mm": 35
+      },
+      "action": "0-3 s: Grandpa Rade steps out of the dark hallway into the doorway and smiles; 3-5 s: Mila turns toward him",
+      "dialogue": [
+        {
+          "who": "deda",
+          "text": "Znam. To nam se javlja tvoja baka."
+        }
+      ],
+      "layout": {
+        "ops": "lokacije/kuhinja.ops.json",
+        "start": "kadrovi/layout/s03_start.png",
+        "end_frame": false
+      },
+      "status": "video_ok",
+      "takes": [
+        {
+          "n": 1,
+          "file": "kadrovi/s03_t1.mp4",
+          "model": "minimax-h3",
+          "seed": 61003,
+          "seconds": 135,
+          "prompt": "Style: cinematic realism, 35mm film look, soft warm practical light, shallow depth of field. Grandpa Rade: man in his late 70s, white beard, flat grey cap, brown corduroy jacket over a checked shirt. Mila: woman in her early 30s, short black bob haircut, round glasses, mustard yellow knitted sweater, dark jeans. Location: kitchen doorway, dark hallway behind. Camera: medium shot, slow dolly in, 35mm lens. Action: 0-3 s: Grandpa Rade steps out of the dark hallway into the doorway and smiles; 3-5 s: Mila turns toward him. Grandpa Rade says: \"Znam. To nam se javlja tvoja baka.\" Continuity: Night, rain outside the window in every shot; Warm tungsten light from the desk lamp; The desk lamp has a cone-shaped cream fabric shade on a thin dark stand; Plain beige walls and a worn dark wooden table; Faces, hair and clothing stay identical to the references.",
+          "created": "2026-10-22 19:10:00",
+          "note": "početna iz layout-a, krajnja kao izmena početne"
+        }
+      ],
+      "start_frame": "kadrovi/start/s03.png",
+      "end_moment": "Mila has turned her head over her shoulder toward Grandpa Rade in the doorway, and he smiles warmly at her",
+      "end_frame": "kadrovi/start/s03_kraj.png"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "_opis": "MiniMax H3 sa LoRA od 4 koraka (DMAD), slika u video. Napravljeno po Stefanovom H3 MAIN workflow-u: Dasiwa Hybrid V2 int8, er_sde + simple, 8 koraka, comfy kitchen attention. H3 radi na 24 fps i traži 17k+5 frejmova (5 s -> 124). Pravi i svoj zvuk (ambijent); montaža ga menja glasom kad kadar ima dijalog.",
+  "_opis": "MiniMax H3 sa LoRA od 4 koraka (DMAD), slika u video. Napravljeno po Stefanovom H3 MAIN workflow-u: Dasiwa Hybrid V2 int8, er_sde + simple, 8 koraka, comfy kitchen attention. H3 radi na 24 fps i traži 17k+5 frejmova (5 s -> 124). Pravi i svoj zvuk (ambijent); montaža ga menja glasom kad kadar ima dijalog. Krajnja slika (end_image) je opciona: bez nje se veza ka last_frame uklanja.",
   "slots": {
     "prompt": {
       "node": "9",
@@ -7,6 +7,10 @@
     },
     "image": {
       "node": "7",
+      "input": "image"
+    },
+    "end_image": {
+      "node": "18",
       "input": "image"
     },
     "seed": {
@@ -21,6 +25,10 @@
       {
         "node": "9",
         "input": "width"
+      },
+      {
+        "node": "19",
+        "input": "width"
       }
     ],
     "height": [
@@ -30,6 +38,10 @@
       },
       {
         "node": "9",
+        "input": "height"
+      },
+      {
+        "node": "19",
         "input": "height"
       }
     ],
@@ -50,6 +62,12 @@
     "prompt",
     "image"
   ],
+  "unlink_if_empty": {
+    "end_image": {
+      "node": "9",
+      "input": "last_frame"
+    }
+  },
   "output_node": "17",
   "output_ext": [
     ".mp4"

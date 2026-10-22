@@ -100,9 +100,21 @@
           "seconds": 130,
           "prompt": "Style: cinematic sci-fi realism, anamorphic lens look, dusty orange Martian light, fine film grain. Location: macro view at ground level on the red Martian surface, very shallow depth of field, soft out of focus background. Camera: insert shot, static camera, rack focus from the foreground to the background, 85mm lens. Action: 0-2 s: the tiny green sprout is in sharp focus, a white spacesuit glove with orange fingertips rests on the sand beside it, the background is a smooth creamy bokeh blur where only a vague red blob and a vague brown blob can be made out; 2-4 s: focus slowly shifts to the background, the red blob turns out to be a tall blooming red flower and the brown blob an old rusty metal watering can with a long spout, half buried in the sand, nothing else appears; 4-5 s: the gloved hand freezes. Voice-over (no one on screen speaks): \"...Or not.\" Continuity: Mars surface at sunrise, low sun, orange-pink sky, thin dust haze; White and orange spacesuit with a gold reflective visor, the face is never visible; The sprout is tiny and bright green, the only green thing in the landscape.",
           "created": "2026-10-22 18:14:00"
+        },
+        {
+          "n": 3,
+          "file": "kadrovi/s02_t3.mp4",
+          "model": "minimax-h3",
+          "seed": 41225,
+          "seconds": 120,
+          "prompt": "Style: cinematic sci-fi realism, anamorphic lens look, dusty orange Martian light, fine film grain. Location: macro view at ground level on the red Martian surface, very shallow depth of field, soft out of focus background. Camera: insert shot, static camera, rack focus from the foreground to the background, 85mm lens. Action: 0-2 s: the tiny green sprout is in sharp focus, a white spacesuit glove with orange fingertips rests on the sand beside it, the background is a smooth creamy bokeh blur where only a vague red blob and a vague brown blob can be made out; 2-4 s: focus slowly shifts to the background, the red blob turns out to be a tall blooming red flower and the brown blob an old rusty metal watering can with a long spout, half buried in the sand, nothing else appears; 4-5 s: the gloved hand freezes. Voice-over (no one on screen speaks): \"...Or not.\" Continuity: Mars surface at sunrise, low sun, orange-pink sky, thin dust haze; White and orange spacesuit with a gold reflective visor, the face is never visible; The sprout is tiny and bright green, the only green thing in the landscape.",
+          "created": "2026-10-22 18:21:50",
+          "note": "početna + krajnja slika (s02_kraj.png): obrt radi"
         }
       ],
-      "start_frame": "kadrovi/start/s02.png"
+      "start_frame": "kadrovi/start/s02.png",
+      "end_moment": "focus has shifted to the background: the vague red blob is now a sharp, tall blooming red flower and the brown blob is an old rusty metal watering can with a long spout, half buried in the sand; the sprout and the glove in the foreground are now soft and out of focus",
+      "end_frame": "kadrovi/start/s02_kraj.png"
     }
   ]
 }

@@ -44,11 +44,16 @@ FAKE_WORKFLOWS = {
             "7": {"class_type": "CLIPTextEncode", "inputs": {"text": ""}},
             "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "x", "images": ["8", 0]}},
             "10": {"class_type": "LoadImage", "inputs": {"image": "none.png"}},
+            "11": {"class_type": "LoadImage", "inputs": {"image": "none.png"}},
+            "12": {"class_type": "FakeImages", "inputs": {"image_1": ["10", 0], "image_2": ["11", 0]}},
         },
         "slots": {
+            "unlink_if_empty": {"reference": {"node": "12", "input": "image_1"},
+                                "reference2": {"node": "12", "input": "image_2"}},
             "slots": {
                 "prompt": {"node": "6", "input": "text"}, "negative": {"node": "7", "input": "text"},
-                "reference": {"node": "10", "input": "image"}, "seed": {"node": "3", "input": "seed"},
+                "reference": {"node": "10", "input": "image"}, "reference2": {"node": "11", "input": "image"},
+                "seed": {"node": "3", "input": "seed"},
                 "width": {"node": "5", "input": "width"}, "height": {"node": "5", "input": "height"},
                 "filename_prefix": {"node": "9", "input": "filename_prefix"},
             },
@@ -84,6 +89,16 @@ FAKE_WORKFLOWS["ltx-a2v"] = {
         "required": ["prompt", "image", "audio"], "prompt_mode": "a2v",
     },
 }
+FAKE_WORKFLOWS["i2v-kraj"] = {  # kao minimax-h3: početna i opciona krajnja slika
+    "api": {**FAKE_WORKFLOWS["ltx-i2v"]["api"],
+            "13": {"class_type": "LoadImage", "inputs": {"image": "none.png"}},
+            "14": {"class_type": "FakeFirstLast", "inputs": {"first": ["12", 0], "last": ["13", 0]}}},
+    "slots": {
+        **FAKE_WORKFLOWS["ltx-i2v"]["slots"],
+        "slots": {**FAKE_WORKFLOWS["ltx-i2v"]["slots"]["slots"], "end_image": {"node": "13", "input": "image"}},
+        "unlink_if_empty": {"end_image": {"node": "14", "input": "last"}},
+    },
+}
 
 
 @pytest.fixture
@@ -97,13 +112,14 @@ def workflows_dir(tmp_path: Path) -> Path:
 
 
 class FakeComfy:
-    """Minimalni ComfyUI: /system_stats, /upload/image, /prompt, /history, /view."""
+    """Minimalni ComfyUI: /system_stats, /upload/image, /prompt, /free, /history, /view."""
 
     def __init__(self, root: Path):
         self.root = root
         (root / "input").mkdir(parents=True)
         (root / "output").mkdir()
         self.uploads: list[str] = []
+        self.frees = 0
         self.prompts: list[dict] = []
         self.history: dict[str, dict] = {}
         self.server = ThreadingHTTPServer(("127.0.0.1", 0), self._handler())
@@ -181,6 +197,9 @@ class FakeComfy:
                     pid = uuid.uuid4().hex
                     fake.history[pid] = fake._execute(workflow)
                     return self._json({"prompt_id": pid, "number": len(fake.prompts), "node_errors": {}})
+                if self.path == "/free":
+                    fake.frees += 1
+                    return self._json({})
                 if self.path == "/upload/image":
                     # dovoljno je izvući ime fajla iz multipart tela
                     marker = b'filename="'

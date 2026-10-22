@@ -44,6 +44,7 @@ class Settings:
     elevenlabs_base_url: str = "https://api.elevenlabs.io/v1"
     elevenlabs_task_url: str | None = None
     elevenlabs_auth_header: str = "xi-api-key"
+    blender: str = "blender"
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -58,4 +59,5 @@ class Settings:
             elevenlabs_base_url=(os.environ.get("ELEVENLABS_BASE_URL") or "https://api.elevenlabs.io/v1").rstrip("/"),
             elevenlabs_task_url=os.environ.get("ELEVENLABS_TASK_URL") or None,
             elevenlabs_auth_header=os.environ.get("ELEVENLABS_AUTH_HEADER") or "xi-api-key",
+            blender=os.environ.get("BLENDER") or "blender",
         )

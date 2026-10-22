@@ -4,6 +4,7 @@
     python -m pipeline.run projects/<film> voice              glas za kadrove sa dijalogom (ElevenLabs)
     python -m pipeline.run projects/<film> refs               reference sheet-ovi i početne slike
     python -m pipeline.run projects/<film> video              video za kadrove kojima fali
+    python -m pipeline.run projects/<film> video --proba      brza proba u pola rezolucije
     python -m pipeline.run projects/<film> review             frejmovi za pregled i pregled.md
     python -m pipeline.run projects/<film> approve s01 [--take 2]
     python -m pipeline.run projects/<film> assemble [--draft] montaža u final/
@@ -17,10 +18,11 @@ Gotovi koraci se preskaču, pa se komanda može pokrenuti ponovo posle prekida.
 from __future__ import annotations
 
 import argparse
+import shutil
 import sys
 from pathlib import Path
 
-from . import assemble, gen_refs, gen_video, gen_voice, review, shotlist, workflows
+from . import assemble, gen_layout, gen_refs, gen_video, gen_voice, review, shotlist, workflows
 from .comfy_client import ComfyClient, ComfyError
 from .config import Settings, utf8_output
 from .media import MediaError
@@ -41,6 +43,9 @@ def cmd_check(data, project, settings, args) -> int:
         workflows.load(gen_refs.image_workflow(data), settings.workflows_dir)
     except workflows.WorkflowError as e:
         print(f"  workflow za slike: {e}")
+    if any(s.get("layout") for s in data["shots"]):
+        found = shutil.which(settings.blender)
+        print(f"  Blender za 3D blokiranje: {found or f'nije pronađen ({settings.blender}); upiši BLENDER u .env'}")
     voice_shots = gen_voice.pending(data, project, args.only)
     chars = gen_voice.characters_needed(voice_shots)
     print(f"  glas: {len(voice_shots)} kadrova čeka, {chars} karaktera teksta za ElevenLabs "
@@ -77,6 +82,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--force", action="store_true")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--draft", action="store_true", help="montaža i sa neodobrenim kadrovima")
+    p.add_argument("--proba", action="store_true", help="video u pola rezolucije, brza provera pokreta")
     args = p.parse_args(argv)
     utf8_output()
     args.only = set(args.shots.split(",")) if args.shots else None
@@ -123,16 +129,20 @@ def main(argv: list[str] | None = None) -> int:
                     save()
             elif step == "refs":
                 if args.dry_run:
+                    print("refs: layout slike iz Blendera koje fale:",
+                          [f"{s['id']} {k}" for s, k in gen_layout.missing(data, project, args.only)] or "nema")
                     print("refs: likovi bez sheet-a:", gen_refs.missing_sheets(data, project) or "nema")
                     print("refs: kadrovi bez početne slike:",
                           [s["id"] for s in gen_refs.missing_start_frames(
                               data, project, args.only, settings.workflows_dir)] or "nema")
                 else:
+                    problems += gen_layout.render(data, project, settings, args.only)
+                    save()
                     gen_refs.generate(data, project, client, settings, args.only, settings.workflows_dir)
                     save()
             elif step == "video":
                 problems += gen_video.generate(data, project, client, settings, args.only, args.force,
-                                               args.dry_run, settings.workflows_dir, save=save)
+                                               args.dry_run, settings.workflows_dir, save=save, proba=args.proba)
             elif step == "review" and not args.dry_run:
                 print(f"pregled: {review.build(data, project, settings, args.only).relative_to(project)}")
         if problems:

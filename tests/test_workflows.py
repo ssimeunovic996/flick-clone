@@ -108,6 +108,13 @@ def test_minimax_h3_workflow_fills_real_nodes():
     assert filled["10"]["inputs"]["noise_seed"] == 7
     assert save["filename_prefix"] == "flick/dan-412/s01" and save["frame_rate"] == 24
     assert "4step" in filled["2"]["inputs"]["lora_name"]
+    assert "last_frame" not in i2v  # bez krajnje slike H3 dobija samo početnu
+
+    values["end_image"] = Path("s02_kraj.png")
+    filled = workflows.apply(wf, spec, values, uploader=lambda p: f"flick/{p.name}")
+    assert filled["9"]["inputs"]["last_frame"] == ["19", 0]
+    assert filled["18"]["inputs"]["image"] == "flick/s02_kraj.png"
+    assert (filled["19"]["inputs"]["width"], filled["19"]["inputs"]["height"]) == (736, 1280)
 
 
 def test_suggest_minimax_h3():
@@ -123,7 +130,7 @@ def test_slika_without_reference_unlinks_image():
     # bez reference sheet-a Qwen pravi sliku iz teksta, pa veza ka LoadImage mora da nestane
     wf, spec = workflows.load("slika")
     filled = workflows.apply(wf, spec, {"prompt": "astronaut", "width": 1536, "height": 1024})
-    assert "images.image_1" not in filled["7"]["inputs"]
+    assert "images.image_1" not in filled["7"]["inputs"] and "images.image_2" not in filled["7"]["inputs"]
     assert (filled["8"]["inputs"]["width"], filled["8"]["inputs"]["height"]) == (1536, 1024)
     assert "images.image_1" in wf["7"]["inputs"]  # original ostaje netaknut
 
@@ -136,6 +143,13 @@ def test_slika_with_reference_keeps_link():
                              uploader=lambda p: f"flick/{p.name}")
     assert filled["7"]["inputs"]["images.image_1"] == ["6", 0]
     assert filled["6"]["inputs"]["image"] == "flick/sheet.png"
+    assert "images.image_2" not in filled["7"]["inputs"]
+
+    # Layout to Render: layout iz Blendera je prva slika (ona se menja), sheet lika druga
+    filled = workflows.apply(wf, spec, {"prompt": "astronaut", "reference": Path("s01_start.png"),
+                                        "reference2": Path("sheet.png")}, uploader=lambda p: f"flick/{p.name}")
+    assert filled["7"]["inputs"]["images.image_2"] == ["12", 0]
+    assert filled["12"]["inputs"]["image"] == "flick/sheet.png"
 
 
 def test_unlink_target_must_exist():

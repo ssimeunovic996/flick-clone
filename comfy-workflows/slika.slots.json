@@ -1,5 +1,5 @@
 {
-  "_opis": "Slike za film: Qwen Image 2.1 sa Lightning LoRA od 4 koraka, kao Stefanov qwen21_edit_lightning. Bez reference pravi sliku iz teksta (reference sheet lika); sa referencom (sheet lika) pravi početnu sliku kadra sa istim likom.",
+  "_opis": "Slike za film: Qwen Image 2.1 sa Lightning LoRA od 4 koraka, kao Stefanov qwen21_edit_lightning. Bez slika pravi sliku iz teksta (reference sheet lika). `reference` je prva slika koju model menja (sheet lika, ili layout iz Blendera kod Layout to Render), `reference2` druga (npr. sheet lika uz layout). Slika koja nije data ostaje bez veze.",
   "slots": {
     "prompt": {
       "node": "7",
@@ -11,6 +11,10 @@
     },
     "reference": {
       "node": "6",
+      "input": "image"
+    },
+    "reference2": {
+      "node": "12",
       "input": "image"
     },
     "seed": {
@@ -34,6 +38,10 @@
     "reference": {
       "node": "7",
       "input": "images.image_1"
+    },
+    "reference2": {
+      "node": "7",
+      "input": "images.image_2"
     }
   },
   "required": [
