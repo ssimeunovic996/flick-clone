@@ -32,6 +32,13 @@ class ComfyClient:
         r.raise_for_status()
         return r.json()
 
+    def free(self) -> None:
+        """Izbacuje sve modele iz VRAM-a i RAM-a (ComfyUI /free). Kad posle Qwen slika krene H3,
+        na 32 GB RAM-a oba modela ne staju i H3 pada sa "hostbuf_file_reader_read failed"."""
+        r = requests.post(self._url("/free"), json={"unload_models": True, "free_memory": True},
+                          timeout=self.timeout)
+        r.raise_for_status()
+
     def upload(self, path: Path, subfolder: str = "flick") -> str:
         """Šalje sliku, zvuk ili video u ComfyUI input folder i vraća ime koje workflow koristi."""
         path = Path(path)

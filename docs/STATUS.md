@@ -32,6 +32,8 @@ Ažurira se posle svakog koraka: datum, šta je urađeno, gde su fajlovi, izmere
 - [x] 1.2c 2026-10-22: Prvi pravi test na GPU-u, kadar s01 filma "Day 412": MiniMax H3, 736x1280, 124 frejma (5,17 s) sa H3 zvukom, 8 koraka. Vreme: oko 3 do 3,5 min po kadru, sa učitavanjem modela. VRAM: tokom generisanja ~1 GB slobodno od 16 (pun), RAM ~3,7 GB slobodno od 32. Fajl: `projects/dan-412/kadrovi/s01_t1.mp4`
 - [x] 1.2d 2026-10-22: ai33 glas u pipeline-u (v3 API, provera posla, krediti u `check`, spisak glasova `python -m pipeline.gen_voice glasovi`). Fali izbor glasa
 - [x] 1.4a 2026-10-22: Scenario i `shotlist.json` za prvi film "Day 412" (`projects/dan-412/`): 10 s, 9:16 za Shorts, 2 kadra `minimax-h3` (LoRA od 4 koraka), glas preko radija (55 karaktera, ElevenLabs preko ai33). Fali ID glasa i ai33 adresa u `.env`
+- [x] 1.2e 2026-10-22: Krajnja slika kadra: `minimax-h3` prima i `last_frame` (slot `end_image`), kadar u `shotlist.json` dobija `end_moment` i `end_frame`. "Day 412" s02, pokušaj 3 (seed 41225, ~2 min): obrt iz mrlja u cvet i kanticu sada radi
+- [x] 1.2f 2026-10-22: Pre prvog videa pipeline isprazni ComfyUI memoriju (`/free`). Bez toga H3 posle Qwen slika pada sa "hostbuf_file_reader_read failed" (RAM je bio 2,5 GB slobodan od 32)
 - [ ] 1.4 Prvi film u `projects/dan-412/final/film.mp4` (vreme po kadru: ___, VRAM: ___)
 
 ## Faza 2: 3D blokiranje u Blenderu
@@ -41,7 +43,13 @@ Ažurira se posle svakog koraka: datum, šta je urađeno, gde su fajlovi, izmere
 - [ ] 2.2 Figure likova: lutke od primitiva (stoji, sedi) gotove; rigovane animacije po potrebi
 - [x] 2.3 `blender/camera_moves.py`: 16 pokreta (dolly, truck, dolly zoom, crane, pan, tilt, orbit, spirala, zoom, putanja) + drhtanje iz ruke
 - [x] 2.4 Render layout-a i dubine po kadru (8k+1 frejmova); ostaje merenje brzine na GPU-u
-- [ ] 2.5 Video iz 3D-a (Union / Layout to Render / Ingredients)
+- [x] 2.4b 2026-10-22: `pipeline/gen_layout.py`: korak `refs` sam renderuje layout slike iz Blendera (početak i kraj kadra, `kadrovi/layout/`), putanja do Blendera u `BLENDER` u `.env`. Proveren sa Blender 4.5.3 i 5.2.3 LTS (Stefan instalira 5.2.3)
+- [ ] 2.5 Video iz 3D-a. Bez LTX-a ide preko slika: Blender layout → Qwen "Layout to Render" → MiniMax H3 sa početnom i krajnjom slikom. Test film `projects/radio/` (kuhinja, Mila i deda Rade, 3 kadra, 16:9 1280x736):
+  - [x] Slike: Qwen ~10 s po slici (6 s kad je prompt keširan). s01 orbit: početna i krajnja iz 3D-a; s02: samo početna; s03: početna iz 3D-a, krajnja kao izmena početne
+  - [x] s01 (orbit, početna + krajnja): kamera ide oko Mile kao u 3D-u, lampa trepne. `projects/radio/kadrovi/s01_t1.mp4`
+  - [x] s02 (samo početna, dolly in iz prompta): Mila okreće dugme radija i progovori. s03 (početna iz 3D-a, krajnja kao izmena): Mila u prvom planu okrene glavu ka dedi u vratima
+  - [x] H3 1280x736, 124 frejma: oko 2,2 do 2,6 min po kadru kad je model učitan, oko 3 min sa učitavanjem. Probni spoj: `projects/_testovi/radio/pregled_radio_s01_s02_s03.mp4`
+  - [ ] Glas: H3 sam pravi zvuk i govor; ElevenLabs glas (ai33) za dijaloge još nije proban
 - [ ] 2.6 MCP alati za scenu
 
 ## Faza 3: Web aplikacija

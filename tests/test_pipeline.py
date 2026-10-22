@@ -6,8 +6,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from pipeline import assemble, gen_voice, media, run, shotlist
-from tests.conftest import make_audio, make_video, needs_ffmpeg, tiny_project
+from pipeline import assemble, gen_layout, gen_voice, media, run, shotlist
+from tests.conftest import ffmpeg, make_audio, make_video, needs_ffmpeg, tiny_project
 
 pytestmark = needs_ffmpeg
 
@@ -69,6 +69,7 @@ def test_full_run(env):
         assert (project / shot["takes"][0]["file"]).exists()
     video_jobs = [w for w in comfy.prompts if "41" in w]
     assert [w["27"]["inputs"]["length"] for w in video_jobs] == [49, 49, 25]
+    assert comfy.frees == 1  # modeli za slike izbačeni jednom, pre prvog videa
     assert {(w["27"]["inputs"]["width"], w["27"]["inputs"]["height"]) for w in video_jobs} == {(320, 192)}
     a2v = next(w for w in video_jobs if "50" in w)
     assert a2v["50"]["inputs"]["audio"] == "flick/s02.wav"
@@ -82,6 +83,7 @@ def test_full_run(env):
     jobs_before, tts_before = len(comfy.prompts), len(env["tts"])
     assert run.main([str(project), "all"]) == 0
     assert (len(comfy.prompts), len(env["tts"])) == (jobs_before, tts_before)
+    assert comfy.frees == 1  # bez novog videa nema ni pražnjenja memorije
 
     # montaža traži odobrene kadrove
     assert run.main([str(project), "assemble"]) == 1
@@ -127,6 +129,120 @@ def test_video_waits_for_voice(env, capsys):
     data = load(project)
     assert data["shots"][1].get("status", "todo") == "todo"
     assert data["shots"][0]["status"] == "video_ok"  # kadrovi bez a2v su urađeni
+
+
+def test_end_frame_made_from_start_frame(env):
+    project, comfy = env["project"], env["comfy"]
+    data = load(project)
+    data["shots"][0].update(model="i2v-kraj", end_moment="the room is full of balloons")
+    data["shots"][2]["model"] = "i2v-kraj"  # bez end_moment: nema krajnje slike
+    shotlist.save(project, data)
+    assert run.main([str(project), "refs"]) == 0
+    data = load(project)
+    s01, _, s03 = data["shots"]
+    assert s01["end_frame"] == "kadrovi/start/s01_kraj.png" and (project / s01["end_frame"]).exists()
+    assert "end_frame" not in s03
+    end_job = next(w for w in comfy.prompts if "Final moment: the room is full of balloons" in w["6"]["inputs"]["text"])
+    assert end_job["10"]["inputs"]["image"] != "none.png"  # početna slika je referenca
+
+    comfy.prompts.clear()
+    assert run.main([str(project), "video", "--shots", "s01,s03"]) == 0
+    with_end, without_end = comfy.prompts
+    assert with_end["13"]["inputs"]["image"] != "none.png" and with_end["14"]["inputs"]["last"] == ["13", 0]
+    assert "last" not in without_end["14"]["inputs"]
+
+
+def fake_blender(calls):
+    """Umesto Blendera: zapamti komandu i napravi sliku na --out."""
+    def run(cmd):
+        calls.append(cmd)
+        out = Path(cmd[cmd.index("--out") + 1])
+        ffmpeg("-f", "lavfi", "-i", "color=c=gray:s=64x36", "-frames:v", "1", str(out))
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+    return run
+
+
+def test_layout_to_render_first_and_last_frame(env, monkeypatch):
+    """3D blokiranje: Blender slike na početku i kraju kadra -> Qwen -> H3 first + last frame."""
+    project, comfy = env["project"], env["comfy"]
+    (project / "lokacije").mkdir()
+    (project / "lokacije" / "soba.ops.json").write_text(json.dumps([
+        {"op": "add", "id": "radio", "shape": "box", "label": "The brown box is an old radio"}]), encoding="utf-8")
+    data = load(project)
+    s01, s02, s03 = data["shots"]
+    s01.update(model="i2v-kraj", layout={"ops": "lokacije/soba.ops.json"})  # bez likova
+    s03.update(model="i2v-kraj", layout={"ops": "lokacije/soba.ops.json"})  # dva lika
+    s02.update(model="i2v-kraj", layout={"ops": "lokacije/soba.ops.json", "end_frame": False},
+               end_moment="she smiles")  # mali pokret: kraj je izmena početne slike, ne drugi layout
+    shotlist.save(project, data)
+    calls = []
+    monkeypatch.setattr(gen_layout, "run_blender", fake_blender(calls))
+
+    assert run.main([str(project), "refs"]) == 0
+    data = load(project)
+    s01, s02, s03 = data["shots"]
+    assert [(c[c.index("--shot") + 1], c[c.index("--t") + 1]) for c in calls] == [
+        ("s01", "0"), ("s01", "2"), ("s02", "0"), ("s03", "0"), ("s03", "1")]
+    assert calls[0][:4] == ["blender", "-b", "--python", str(gen_layout.STAGE)]
+    assert s01["layout"]["end"] == "kadrovi/layout/s01_end.png" and "end" not in s02["layout"]
+    assert s01["end_frame"] == "kadrovi/start/s01_kraj.png" and s02["end_frame"] == "kadrovi/start/s02_kraj.png"
+    edit = next(w for w in comfy.prompts if w["6"]["inputs"]["text"].startswith("Keep the exact same scene"))
+    assert "Final moment: she smiles." in edit["6"]["inputs"]["text"]
+
+    starts = [w for w in comfy.prompts if w["6"]["inputs"]["text"].startswith("Image 1 is a rough 3D blockout of a film")]
+    ends = [w for w in comfy.prompts if w["6"]["inputs"]["text"].startswith("Image 1 is a rough 3D blockout of the last")]
+    start_empty, _, start_cast = starts  # s01 bez likova: samo layout; s03: layout + sheet oba lika
+    assert "image_2" not in start_empty["12"]["inputs"] and start_empty["10"]["inputs"]["image"] != "none.png"
+    assert "mannequin" not in start_empty["6"]["inputs"]["text"].replace("No mannequins", "")
+    assert start_cast["12"]["inputs"]["image_2"] == ["11", 0]
+    assert "The yellow mannequin is Mila: yellow sweater." in start_cast["6"]["inputs"]["text"]
+    end_empty, end_cast = ends  # kraj kao početak: layout + sheet-ovi (s01 bez likova nema drugu sliku)
+    assert "image_2" not in end_empty["12"]["inputs"] and end_cast["12"]["inputs"]["image_2"] == ["11", 0]
+    assert all("The brown box is an old radio." in w["6"]["inputs"]["text"] for w in starts + ends)
+
+    assert run.main([str(project), "refs"]) == 0  # sve postoji: Blender se ne poziva ponovo
+    assert len(calls) == 5
+
+
+@pytest.mark.parametrize("cam,view", [([0, 1.6, 3], "front"), ([0, 1.6, -3], "back"), ([3, 1.6, 0], "profile")])
+def test_layout_views_follow_the_camera(tmp_path, cam, view):
+    """Kako kamera vidi figuru (licem, leđima, profilom) čita se iz 3D scene i ide u prompt za Qwen."""
+    (tmp_path / "scena.ops.json").write_text(json.dumps([
+        {"op": "add", "id": "mila", "type": "figure", "pos": [0, 0, 0], "facing": 0, "pose": "sit"},
+        {"op": "add", "id": "kam", "type": "camera", "pos": cam, "look_at": "mila"},
+        {"op": "shot", "id": "s01", "camera": "kam", "duration": 5}]), encoding="utf-8")
+    shot = {"id": "s01", "duration": 5, "characters": ["mila", "deda"], "layout": {"ops": "scena.ops.json"}}
+    # deda nema figuru u sceni; jedna figura nema prvi i drugi plan
+    assert gen_layout.views(tmp_path, shot, 0.0) == {"mila": {"view": view, "pose": "sit", "side": "center"}}
+
+
+def test_layout_views_place_figures_in_the_frame(tmp_path):
+    # kamera gleda niz -Z: Mila tik uz kameru levo, deda daleko desno
+    (tmp_path / "scena.ops.json").write_text(json.dumps([
+        {"op": "add", "id": "mila", "type": "figure", "pos": [-0.4, 0, -1], "facing": 0, "pose": "sit"},
+        {"op": "add", "id": "deda", "type": "figure", "pos": [1.2, 0, -5], "facing": 0},
+        {"op": "add", "id": "kam", "type": "camera", "pos": [0, 1.2, 0], "look_at": [0, 1.2, -5], "lens_mm": 35},
+        {"op": "shot", "id": "s03", "camera": "kam", "duration": 5, "resolution": [1280, 720]}]), encoding="utf-8")
+    shot = {"id": "s03", "duration": 5, "characters": ["deda", "mila"], "layout": {"ops": "scena.ops.json"}}
+    v = gen_layout.views(tmp_path, shot, 0.0)
+    assert (v["mila"]["side"], v["mila"]["depth"], v["mila"]["view"]) == ("left", "foreground", "front")
+    assert (v["deda"]["side"], v["deda"]["depth"], v["deda"]["pose"]) == ("right", "background", "stand")
+
+
+def test_layout_without_blender_is_reported(env, monkeypatch, capsys):
+    project = env["project"]
+    data = load(project)
+    data["shots"][0]["layout"] = {"ops": "soba.ops.json"}
+    shotlist.save(project, data)
+    (project / "soba.ops.json").write_text("[]", encoding="utf-8")
+
+    def missing(cmd):
+        raise FileNotFoundError(cmd[0])
+
+    monkeypatch.setattr(gen_layout, "run_blender", missing)
+    assert run.main([str(project), "refs"]) == 1
+    assert "Blender nije pronađen (blender); upiši putanju u BLENDER u .env" in capsys.readouterr().out
+    assert "start_frame" not in load(project)["shots"][0]  # bez layout-a se ne pravi slika samo iz teksta
 
 
 def test_dry_run_sends_nothing(env, capsys):

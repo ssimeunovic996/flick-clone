@@ -71,6 +71,6 @@ Ovo može Claude Code da uradi sam preko comfy-mcp: otvori workflow, izveze ga i
 | `size_multiple` | širina i visina se zaokružuju na ovaj umnožak |
 | `max_seconds` | upozorenje ako je kadar duži |
 
-Slotovi koje pipeline zna: `prompt`, `negative`, `image`, `audio`, `control_video`, `reference`, `seed`, `width`, `height`, `frames`, `fps`, `length_seconds`, `filename_prefix`. Slotovi `image`, `audio`, `control_video` i `reference` su fajlovi: pipeline ih prvo pošalje u ComfyUI (`input/flick/`) i upiše ime fajla.
+Slotovi koje pipeline zna: `prompt`, `negative`, `image`, `end_image`, `audio`, `control_video`, `reference`, `reference2`, `seed`, `width`, `height`, `frames`, `fps`, `length_seconds`, `filename_prefix`. `end_image` je krajnja slika kadra (polje `end_frame`, pravi se iz `end_moment` ili iz 3D layout-a); `minimax-h3` je prima kao `last_frame`. `reference2` je druga slika u workflow-u `slika`: kod "Layout to Render" `reference` je layout iz Blendera, a `reference2` sheet likova. Slotovi `image`, `end_image`, `audio`, `control_video`, `reference` i `reference2` su fajlovi: pipeline ih prvo pošalje u ComfyUI (`input/flick/`) i upiše ime fajla.
 
 Primeri u `primeri/` pokazuju kako izgledaju slots fajlovi za svaki tip; brojevi čvorova u njima su izmišljeni i moraju se zameniti brojevima iz tvog izvoza.

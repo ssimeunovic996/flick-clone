@@ -58,6 +58,7 @@ def shot_values(data: dict[str, Any], project: Path, shot: dict[str, Any], spec:
         "prompt": prompts.video_prompt(data, shot, mode),
         "negative": data.get("negative"),
         "image": existing(shot.get("start_frame")),
+        "end_image": existing(shot.get("end_frame")),
         "audio": existing((shot.get("audio") or {}).get("file")),
         "control_video": existing((shot.get("control") or {}).get("video")),
         "reference": gen_refs.shot_reference(data, project, shot, settings),
@@ -93,6 +94,7 @@ def generate(data: dict[str, Any], project: Path, client: ComfyClient | None, se
              directory: Path = WORKFLOWS_DIR, save=None, log=print) -> list[str]:
     """Generiše kadrove kojima fali video. `save` se poziva posle svakog kadra (čuva napredak)."""
     problems: list[str] = []
+    freed = False
     for shot in pending(data, project, only, force):
         model = shotlist.shot_model(data, shot)
         _, spec = workflows.load(model, directory)
@@ -108,11 +110,14 @@ def generate(data: dict[str, Any], project: Path, client: ComfyClient | None, se
         if dry_run:
             log(f"\n[{shot['id']}] model={model} mod={spec.get('prompt_mode', 'i2v')} "
                 f"frejmova={values['frames']} {values['width']}x{values['height']} seed={seed}")
-            for key in ("image", "audio", "control_video", "reference"):
+            for key in ("image", "end_image", "audio", "control_video", "reference"):
                 if values.get(key):
                     log(f"  {key}: {Path(values[key]).relative_to(project)}")
             log(f"  prompt: {values['prompt']}")
             continue
+        if not freed:  # modeli za slike ostaju u memoriji i ne ostave mesta video modelu
+            client.free()
+            freed = True
         n = len(shot.get("takes", [])) + 1
         dest = project / "kadrovi" / f"{shot['id']}_t{n}.mp4"
         log(f"kadar {shot['id']}: generišem pokušaj {n} ({model})")
