@@ -23,6 +23,7 @@ MOVES = {
     "pan_left": "pan left", "pan_right": "pan right", "orbit": "orbit around the subject",
     "tracking": "tracking shot following the subject", "handheld": "subtle handheld movement",
     "spiral": "spiral move around the subject",
+    "rack_focus": "static camera, rack focus from the foreground to the background",
 }
 
 
@@ -116,5 +117,5 @@ def reference_sheet_prompt(data: dict[str, Any], cid: str) -> str:
     ch = data["characters"][cid]
     style = data.get("style", "cinematic realism")
     return (f"Character reference sheet, {style}. {_name(data, cid)}: {ch.get('description', '')}. "
-            "Full body front view, side view and back view, plus a close-up of the face, "
+            "Full body front view, side view and back view, plus a close-up of the head, "
             "same outfit in every view, neutral grey background, even studio light, no text.")

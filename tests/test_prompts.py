@@ -47,3 +47,15 @@ def test_start_frame_uses_first_beat_only():
 def test_reference_sheet_prompt():
     p = prompts.reference_sheet_prompt(DATA, "deda")
     assert "Grandpa Rade" in p and "front view" in p and "no text" in p
+
+
+def test_dan_412_prompts():
+    data = shotlist.load(Path(__file__).resolve().parent.parent / "projects" / "dan-412")
+    s01, s02 = data["shots"]
+    p1 = prompts.video_prompt(data, s01, "i2v")
+    assert 'Voice-over (no one on screen speaks): "Day four hundred twelve.' in p1
+    assert "The astronaut: lone astronaut" in p1
+    p2 = prompts.video_prompt(data, s02, "i2v")
+    assert "rack focus from the foreground to the background" in p2
+    assert "Faces, hair and clothing" not in p2  # u kadru nema lika, samo rukavica
+    assert "blurry red shape" in prompts.start_frame_prompt(data, s02)

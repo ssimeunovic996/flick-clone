@@ -29,7 +29,8 @@ Ažurira se posle svakog koraka: datum, šta je urađeno, gde su fajlovi, izmere
 - [x] 1.3 Šablon prompta (`pipeline/prompts.py`, opis u `pipeline/prompt_template.md`)
 - [ ] 1.2b Workflow-i iz Faze 0 povezani: `comfy-workflows/<ime>.api.json` + `.slots.json` za `slika`, `ltx-i2v`, `ltx-a2v` (i `minimax-h3` ako ostaje); `python -m pipeline.run projects/primer check` prolazi
 - [ ] 1.2c Prvi pravi test na GPU-u: jedan kadar iz `projects/primer` (vreme: ___, VRAM: ___)
-- [ ] 1.4 Prvi film u `projects/<film>/final/film.mp4`
+- [x] 1.4a 2026-10-22: Scenario i `shotlist.json` za prvi film "Day 412" (`projects/dan-412/`): 10 s, 9:16 za Shorts, 2 kadra `ltx-i2v`, glas preko radija (55 karaktera). Fali ID ElevenLabs glasa
+- [ ] 1.4 Prvi film u `projects/dan-412/final/film.mp4` (vreme po kadru: ___, VRAM: ___)
 
 ## Faza 2: 3D blokiranje u Blenderu
 
