@@ -13,10 +13,15 @@ pytestmark = needs_ffmpeg
 
 
 class FakeResponse:
-    def __init__(self, content: bytes, status_code: int = 200):
+    def __init__(self, content: bytes = b"", status_code: int = 200, payload=None):
         self.content = content
         self.status_code = status_code
-        self.text = content[:100].decode(errors="replace")
+        self.payload = payload
+        self.headers = {"Content-Type": "application/json" if payload is not None else "audio/mpeg"}
+        self.text = json.dumps(payload) if payload is not None else content[:100].decode(errors="replace")
+
+    def json(self):
+        return self.payload
 
 
 @pytest.fixture
@@ -167,3 +172,64 @@ def test_subtitles_split_by_text_length():
     srt = assemble.subtitles(data, shots)
     assert srt.startswith("1\n00:00:05,000 --> 00:00:05,808\nKratko.")
     assert "00:00:05,808 --> 00:00:08,000\nMalo duža rečenica." in srt
+
+
+def ai33_settings(**changes):
+    from pipeline.config import Settings
+
+    base = dict(comfyui_url="http://x", elevenlabs_api_key="k", elevenlabs_model="m", ffmpeg="ffmpeg",
+                ffprobe="ffprobe", elevenlabs_base_url="https://api.primer-ai33.test/v1",
+                elevenlabs_task_url="https://api.primer-ai33.test/v1/task/{task_id}")
+    base.update(changes)
+    return Settings(**base)
+
+
+def test_voice_service_with_task_polling(tmp_path, monkeypatch):
+    """Servis tipa ai33: POST vrati id posla, provera posla posle par pokušaja da link do zvuka."""
+    mp3 = make_audio(tmp_path / "glas.mp3", 0.5)
+    calls = []
+
+    def post(url, params=None, headers=None, json=None, timeout=None):
+        calls.append(("POST", url, headers))
+        return FakeResponse(payload={"success": True, "task_id": "t-42"})
+
+    def get(url, headers=None, timeout=None):
+        calls.append(("GET", url, headers))
+        if url.endswith("/task/t-42"):
+            polls = sum(1 for c in calls if c[1].endswith("/task/t-42"))
+            if polls < 2:
+                return FakeResponse(payload={"status": "processing"})
+            return FakeResponse(payload={"status": "done", "metadata": {"audio_url": "https://cdn.test/a.mp3"}})
+        assert url == "https://cdn.test/a.mp3"
+        return FakeResponse(mp3.read_bytes())
+
+    monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(post=post, get=get))
+    dest = gen_voice.tts("Zdravo", "voice-1", ai33_settings(), tmp_path / "out.mp3", poll=0)
+    assert dest.read_bytes() == mp3.read_bytes()
+    assert calls[0][1] == "https://api.primer-ai33.test/v1/text-to-speech/voice-1"
+    assert calls[0][2]["xi-api-key"] == "k"
+    assert [c[0] for c in calls] == ["POST", "GET", "GET", "GET"]
+
+
+def test_voice_service_task_without_task_url_explains(tmp_path, monkeypatch):
+    post = lambda *a, **k: FakeResponse(payload={"task_id": "t-1"})  # noqa: E731
+    monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(post=post, get=None))
+    with pytest.raises(gen_voice.VoiceError, match="ELEVENLABS_TASK_URL"):
+        gen_voice.tts("x", "v", ai33_settings(elevenlabs_task_url=None), tmp_path / "o.mp3")
+
+
+def test_voice_service_failed_task(tmp_path, monkeypatch):
+    post = lambda *a, **k: FakeResponse(payload={"task_id": "t-1"})  # noqa: E731
+    get = lambda *a, **k: FakeResponse(payload={"status": "failed", "error": "no credits"})  # noqa: E731
+    monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(post=post, get=get))
+    with pytest.raises(gen_voice.VoiceError, match="nije uspeo"):
+        gen_voice.tts("x", "v", ai33_settings(), tmp_path / "o.mp3", poll=0)
+
+
+@pytest.mark.parametrize("rule,seconds,fps,frames", [
+    ("8k+1", 5, 24, 121), ("4k+1", 5, 24, 121), ("4k+1", 6, 25, 153), ("exact", 5, 24, 120), ("exact", 6, 25, 150),
+])
+def test_frame_rules(rule, seconds, fps, frames):
+    from pipeline import gen_video
+
+    assert gen_video.frame_count({"frames": rule}, seconds, fps) == frames

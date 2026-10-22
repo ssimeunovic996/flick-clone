@@ -16,15 +16,17 @@ Astronautkinja na Marsu posadi prvu biljku i to javi bazi. Kamera izoštri pozad
 ## Zašto ovako
 
 - **Lice se ne vidi** (zlatni vizir), pa nema problema sa doslednošću lica između kadrova.
-- **Glas ide preko radija**, kao narator, pa ne treba sinhronizacija usana. Oba kadra su obični LTX-2.5 slika u video (`ltx-i2v`); A2V testiramo u sledećem filmu.
+- **Video je MiniMax H3 sa LoRA od 4 koraka**, slika u video (workflow `minimax-h3`), za oba kadra.
+- **Glas ide preko radija**, kao narator, pa ne treba sinhronizacija usana.
 - **Obrt je u fokusu, ne u pokretu kamere**: cvet je od početka u kadru, samo zamućen, pa model ne mora da izmišlja novi sadržaj usred kadra.
 - Replike su na engleskom zbog YouTube publike; za srpsku verziju se menjaju samo dve linije teksta.
 
 ## Šta treba pre pokretanja
 
-1. U ElevenLabs biblioteci izaberi miran ženski glas i upiši njegov ID umesto `ELEVENLABS_VOICE_ID_ASTRONAUTKINJE`. Ukupno je 55 karaktera teksta.
-2. Workflow-i `slika` i `ltx-i2v` povezani (Faza 0 i korak 1.2b).
-3. Zatim:
+1. Izaberi miran ženski ElevenLabs glas (preko ai33) i upiši njegov ID umesto `ELEVENLABS_VOICE_ID_ASTRONAUTKINJE`. Ukupno je 55 karaktera teksta.
+2. U `.env` ai33 ključ i adresa njihovog API-ja (`ELEVENLABS_BASE_URL`, po potrebi `ELEVENLABS_TASK_URL`; vidi `.env.example`).
+3. Workflow-i `slika` i `minimax-h3` povezani (tvoj MiniMax H3 workflow sa LoRA od 4 koraka, izvezen u API formatu; uputstvo u `comfy-workflows/README.md`).
+4. Zatim:
    ```
    python -m pipeline.run projects/dan-412 check
    python -m pipeline.run projects/dan-412 all

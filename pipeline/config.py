@@ -41,6 +41,9 @@ class Settings:
     ffmpeg: str
     ffprobe: str
     workflows_dir: Path = WORKFLOWS_DIR
+    elevenlabs_base_url: str = "https://api.elevenlabs.io/v1"
+    elevenlabs_task_url: str | None = None
+    elevenlabs_auth_header: str = "xi-api-key"
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -52,4 +55,7 @@ class Settings:
             ffmpeg=os.environ.get("FFMPEG", "ffmpeg"),
             ffprobe=os.environ.get("FFPROBE", "ffprobe"),
             workflows_dir=Path(os.environ.get("FLICK_WORKFLOWS_DIR", WORKFLOWS_DIR)),
+            elevenlabs_base_url=os.environ.get("ELEVENLABS_BASE_URL", "https://api.elevenlabs.io/v1").rstrip("/"),
+            elevenlabs_task_url=os.environ.get("ELEVENLABS_TASK_URL") or None,
+            elevenlabs_auth_header=os.environ.get("ELEVENLABS_AUTH_HEADER", "xi-api-key"),
         )

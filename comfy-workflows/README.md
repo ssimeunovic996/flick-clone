@@ -19,7 +19,8 @@ Workflow-i koje očekujemo posle Faze 0:
 | `ltx-i2v` | LTX-2.5, slika u video | većina kadrova |
 | `ltx-a2v` | LTX-2.5, slika i zvuk u video | kadrovi sa dijalogom (usne prate glas) |
 | `ltx-control` | LTX-2.5 sa depth ili layout kontrolom | kadrovi iz Blendera (Faza 2) |
-| `minimax-h3` | MiniMax H3, referenca u video | kadrovi gde je bitna doslednost lika |
+| `minimax-h3` | MiniMax H3 sa LoRA od 4 koraka, slika u video | Stefanov glavni model; prvi film "Day 412" |
+| `minimax-h3-ref` | MiniMax H3, referenca lika u video | kadrovi gde je bitna doslednost lika |
 
 ## Kako se pravi slots fajl
 
@@ -66,7 +67,7 @@ Ovo može Claude Code da uradi sam preko comfy-mcp: otvori workflow, izveze ga i
 | `output_node` | čvor čiji izlaz se preuzima; bez njega se uzima prvi video ili slika |
 | `output_ext` | koji tip fajla se uzima kad čvor da više izlaza |
 | `prompt_mode` | `i2v`, `a2v` (zvuk vodi usne), `ingredients` (reference sheet), `control` (3D kontrolni video) |
-| `frames` | `8k+1` za LTX (5 s pri 24 fps daje 121) ili `exact` |
+| `frames` | `8k+1` za LTX (5 s pri 24 fps daje 121), `4k+1` za modele kao Wan, ili `exact` (trajanje × fps) |
 | `size_multiple` | širina i visina se zaokružuju na ovaj umnožak |
 | `max_seconds` | upozorenje ako je kadar duži |
 
