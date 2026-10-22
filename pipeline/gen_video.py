@@ -31,13 +31,17 @@ class ShotNotReady(RuntimeError):
 
 
 def frame_count(spec: dict[str, Any], duration: float, fps: int) -> int:
-    """Pravilo iz slots fajla: "8k+1" (LTX), "4k+1" (modeli kao Wan) ili "exact"."""
+    """Pravilo iz slots fajla: "8k+1" (LTX), "4k+1" (modeli kao Wan), "17k+5" (MiniMax H3) ili "exact".
+
+    Za "Nk+M" uzima se prvi broj tog oblika koji pokriva trajanje kadra.
+    """
     rule = str(spec.get("frames", "8k+1")).replace(" ", "")
-    match = re.fullmatch(r"(\d+)k\+1", rule)
+    frames = max(1, round(duration * fps))
+    match = re.fullmatch(r"(\d+)k\+(\d+)", rule)
     if match:
-        step = int(match.group(1))
-        return step * max(1, math.ceil(duration * fps / step)) + 1
-    return max(1, round(duration * fps))
+        step, offset = int(match.group(1)), int(match.group(2))
+        return offset + step * max(0, math.ceil((frames - offset) / step))
+    return frames
 
 
 def shot_values(data: dict[str, Any], project: Path, shot: dict[str, Any], spec: dict[str, Any],

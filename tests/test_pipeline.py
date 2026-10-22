@@ -211,6 +211,75 @@ def test_voice_service_with_task_polling(tmp_path, monkeypatch):
     assert [c[0] for c in calls] == ["POST", "GET", "GET", "GET"]
 
 
+def test_ai33_v3_text_to_speech(tmp_path, monkeypatch):
+    """ai33: form polja na /v3/text-to-speech, glas dobija prefiks, posao se proverava na /v1/task."""
+    mp3 = make_audio(tmp_path / "glas.mp3", 0.5)
+    calls = []
+
+    def post(url, headers=None, files=None, timeout=None):
+        calls.append(("POST", url, headers, files))
+        return FakeResponse(payload={"success": True, "task_id": "t-7"})
+
+    def get(url, headers=None, timeout=None):
+        calls.append(("GET", url, headers, None))
+        if url == "https://api.ai33.pro/v1/task/t-7":
+            return FakeResponse(payload={"id": "t-7", "status": "done", "progress": 100,
+                                         "metadata": {"audio_url": "https://cdn.ai33.test/t-7.mp3"}})
+        assert url == "https://cdn.ai33.test/t-7.mp3"
+        return FakeResponse(mp3.read_bytes())
+
+    monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(post=post, get=get))
+    settings = ai33_settings(elevenlabs_base_url="https://api.ai33.pro", elevenlabs_task_url=None)
+    dest = gen_voice.tts("Day four hundred twelve.", "21m00Tcm4TlvDq8ikWAM", settings, tmp_path / "o.mp3", poll=0)
+    assert dest.read_bytes() == mp3.read_bytes()
+    method, url, headers, files = calls[0]
+    assert url == "https://api.ai33.pro/v3/text-to-speech"
+    assert headers == {"xi-api-key": "k"}
+    assert files["voice_id"] == (None, "elevenlabs_21m00Tcm4TlvDq8ikWAM")
+    assert files["text"] == (None, "Day four hundred twelve.")
+    assert [c[0] for c in calls] == ["POST", "GET", "GET"]
+
+
+def test_ai33_keeps_provider_prefix_and_strips_version(tmp_path, monkeypatch):
+    sent = {}
+
+    def post(url, headers=None, files=None, timeout=None):
+        sent.update(url=url, voice=files["voice_id"][1])
+        return FakeResponse(payload={"success": True, "task_id": "t-8"})
+
+    get = lambda url, headers=None, timeout=None: FakeResponse(payload={"status": "error", "error_message": "no credits"})  # noqa: E731
+    monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(post=post, get=get))
+    settings = ai33_settings(elevenlabs_base_url="https://api.ai33.pro/v1", elevenlabs_task_url=None)
+    with pytest.raises(gen_voice.VoiceError, match="no credits"):
+        gen_voice.tts("Or not.", "minimax_glas", settings, tmp_path / "o.mp3", poll=0)
+    assert sent == {"url": "https://api.ai33.pro/v3/text-to-speech", "voice": "minimax_glas"}
+
+
+def test_ai33_rejected_text_explains(tmp_path, monkeypatch):
+    post = lambda url, headers=None, files=None, timeout=None: FakeResponse(payload={"success": False, "message": "bad voice"})  # noqa: E731
+    monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(post=post, get=None))
+    settings = ai33_settings(elevenlabs_base_url="https://api.ai33.pro", elevenlabs_task_url=None)
+    with pytest.raises(gen_voice.VoiceError, match="bad voice"):
+        gen_voice.tts("Or not.", "x", settings, tmp_path / "o.mp3", poll=0)
+
+
+def test_ai33_credits_and_voices(monkeypatch):
+    seen = []
+
+    def get(url, params=None, headers=None, timeout=None):
+        seen.append((url, params))
+        if url.endswith("/v1/credits"):
+            return FakeResponse(payload={"success": True, "credits": 12345})
+        return FakeResponse(payload={"success": True, "data": [{"voice_id": "elevenlabs_a", "name": "Rachel"}]})
+
+    monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(get=get))
+    settings = ai33_settings(elevenlabs_base_url="https://api.ai33.pro")
+    assert gen_voice.is_ai33(settings) and not gen_voice.is_ai33(ai33_settings())
+    assert gen_voice.ai33_credits(settings) == 12345
+    assert gen_voice.ai33_voices(settings, "calm")[0]["name"] == "Rachel"
+    assert seen[1] == ("https://api.ai33.pro/v3/voices", {"provider": "elevenlabs", "page_size": 30, "search": "calm"})
+
+
 def test_voice_service_task_without_task_url_explains(tmp_path, monkeypatch):
     post = lambda *a, **k: FakeResponse(payload={"task_id": "t-1"})  # noqa: E731
     monkeypatch.setattr(gen_voice, "requests", SimpleNamespace(post=post, get=None))
@@ -228,8 +297,25 @@ def test_voice_service_failed_task(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize("rule,seconds,fps,frames", [
     ("8k+1", 5, 24, 121), ("4k+1", 5, 24, 121), ("4k+1", 6, 25, 153), ("exact", 5, 24, 120), ("exact", 6, 25, 150),
+    ("17k+5", 5, 24, 124), ("17k+5", 4, 24, 107), ("17k+5", 0.1, 24, 5),
 ])
 def test_frame_rules(rule, seconds, fps, frames):
     from pipeline import gen_video
 
     assert gen_video.frame_count({"frames": rule}, seconds, fps) == frames
+
+
+def test_empty_env_values_use_defaults(monkeypatch):
+    # prazna linija u .env (npr. ELEVENLABS_BASE_URL=) ne sme da obriše podrazumevanu adresu
+    from pipeline import config
+
+    monkeypatch.setattr(config, "load_env", lambda path=None: None)
+    for key in ("COMFYUI_URL", "ELEVENLABS_BASE_URL", "ELEVENLABS_AUTH_HEADER", "ELEVENLABS_MODEL",
+                "ELEVENLABS_TASK_URL", "ELEVENLABS_API_KEY"):
+        monkeypatch.setenv(key, "")
+    s = config.Settings.from_env()
+    assert s.comfyui_url == "http://127.0.0.1:8188"
+    assert s.elevenlabs_base_url == "https://api.elevenlabs.io/v1"
+    assert s.elevenlabs_auth_header == "xi-api-key"
+    assert s.elevenlabs_model == "eleven_multilingual_v2"
+    assert s.elevenlabs_task_url is None and s.elevenlabs_api_key is None

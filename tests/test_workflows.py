@@ -88,3 +88,57 @@ def test_example_slots_are_well_formed():
         spec = json.loads(path.read_text(encoding="utf-8"))
         assert set(spec["slots"]) <= workflows.KNOWN_SLOTS, path.name
         assert set(spec["required"]) <= set(spec["slots"]), path.name
+
+
+def test_minimax_h3_workflow_fills_real_nodes():
+    # pravi workflow za Stefanov MiniMax H3 (LoRA od 4 koraka): 9:16 i 5 s daju 736x1280 i 124 frejma
+    from pathlib import Path
+
+    from pipeline import gen_video, shotlist
+
+    wf, spec = workflows.load("minimax-h3")
+    w, h = (shotlist.snap(v, spec["size_multiple"]) for v in (720, 1280))
+    values = {"prompt": "a sprout on Mars", "image": Path("s01.png"), "seed": 7, "width": w, "height": h,
+              "frames": gen_video.frame_count(spec, 5, 24), "fps": 24, "filename_prefix": "flick/dan-412/s01"}
+    filled = workflows.apply(wf, spec, values, uploader=lambda p: f"flick/{p.name}")
+    i2v, scale, save = filled["9"]["inputs"], filled["8"]["inputs"], filled["17"]["inputs"]
+    assert (i2v["width"], i2v["height"], i2v["length"]) == (736, 1280, 124)
+    assert (scale["width"], scale["height"]) == (736, 1280)
+    assert i2v["prompt"] == "a sprout on Mars" and filled["7"]["inputs"]["image"] == "flick/s01.png"
+    assert filled["10"]["inputs"]["noise_seed"] == 7
+    assert save["filename_prefix"] == "flick/dan-412/s01" and save["frame_rate"] == 24
+    assert "4step" in filled["2"]["inputs"]["lora_name"]
+
+
+def test_suggest_minimax_h3():
+    wf, _ = workflows.load("minimax-h3")
+    s = workflows.suggest(wf)
+    assert s["frames"] == "17k+5"
+    assert s["slots"]["prompt"] == {"node": "9", "input": "prompt"}
+    assert s["slots"]["image"] == {"node": "7", "input": "image"}
+    assert s["output_node"] == "17"
+
+
+def test_slika_without_reference_unlinks_image():
+    # bez reference sheet-a Qwen pravi sliku iz teksta, pa veza ka LoadImage mora da nestane
+    wf, spec = workflows.load("slika")
+    filled = workflows.apply(wf, spec, {"prompt": "astronaut", "width": 1536, "height": 1024})
+    assert "images.image_1" not in filled["7"]["inputs"]
+    assert (filled["8"]["inputs"]["width"], filled["8"]["inputs"]["height"]) == (1536, 1024)
+    assert "images.image_1" in wf["7"]["inputs"]  # original ostaje netaknut
+
+
+def test_slika_with_reference_keeps_link():
+    from pathlib import Path
+
+    wf, spec = workflows.load("slika")
+    filled = workflows.apply(wf, spec, {"prompt": "astronaut", "reference": Path("sheet.png")},
+                             uploader=lambda p: f"flick/{p.name}")
+    assert filled["7"]["inputs"]["images.image_1"] == ["6", 0]
+    assert filled["6"]["inputs"]["image"] == "flick/sheet.png"
+
+
+def test_unlink_target_must_exist():
+    spec = {"slots": {}, "unlink_if_empty": {"reference": {"node": "99", "input": "x"}}}
+    with pytest.raises(workflows.WorkflowError, match="99"):
+        workflows.check({"1": {"class_type": "X", "inputs": {}}}, spec)

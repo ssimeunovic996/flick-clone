@@ -24,7 +24,8 @@
     "astronautkinja": {
       "name": "The astronaut",
       "description": "lone astronaut in a bulky white spacesuit with orange shoulder panels, small mission patch on the left arm, white gloves with orange fingertips, helmet with a gold reflective visor that hides the face",
-      "color": "white"
+      "color": "white",
+      "ref": "likovi/astronautkinja_sheet.png"
     }
   },
   "shots": [
@@ -48,20 +49,31 @@
         }
       ],
       "audio_start": 0.5,
-      "status": "todo",
-      "takes": []
+      "status": "video_ok",
+      "takes": [
+        {
+          "n": 1,
+          "file": "kadrovi/s01_t1.mp4",
+          "model": "minimax-h3",
+          "seed": 41203,
+          "seconds": 210,
+          "prompt": "Style: cinematic sci-fi realism, anamorphic lens look, dusty orange Martian light, fine film grain. The astronaut: lone astronaut in a bulky white spacesuit with orange shoulder panels, small mission patch on the left arm, white gloves with orange fingertips, helmet with a gold reflective visor that hides the face. Location: vast red Martian desert at sunrise, rocky dunes, the astronaut small in the lower third of the frame, huge pink sky above. Camera: wide shot, slow dolly in, 24mm lens. Action: 0-2 s: the astronaut kneels in the red sand; 2-5 s: she presses a tiny green sprout into the soil and gently pats the sand around it. Voice-over (no one on screen speaks): \"Day four hundred twelve. First plant on Mars.\" Continuity: Mars surface at sunrise, low sun, orange-pink sky, thin dust haze; White and orange spacesuit with a gold reflective visor, the face is never visible; The sprout is tiny and bright green, the only green thing in the landscape; Faces, hair and clothing stay identical to the references.",
+          "created": "2026-10-22 18:04:00"
+        }
+      ],
+      "start_frame": "kadrovi/start/s01.png"
     },
     {
       "id": "s02",
       "duration": 5,
-      "location_description": "macro view at ground level on the red Martian surface",
+      "location_description": "macro view at ground level on the red Martian surface, very shallow depth of field, soft out of focus background",
       "characters": [],
       "camera": {
         "shot": "insert",
         "move": "rack_focus",
         "lens_mm": 85
       },
-      "action": "0-2 s: the tiny green sprout is in sharp focus with a white and orange gloved hand resting beside it, far behind it a blurry red shape in the soft orange background; 2-4 s: focus shifts to the background and reveals a tall blooming red flower next to an old rusty watering can half buried in the sand; 4-5 s: the gloved hand freezes",
+      "action": "0-2 s: the tiny green sprout is in sharp focus, a white spacesuit glove with orange fingertips rests on the sand beside it, the background is a smooth creamy bokeh blur where only a vague red blob and a vague brown blob can be made out; 2-4 s: focus slowly shifts to the background, the red blob turns out to be a tall blooming red flower and the brown blob an old rusty metal watering can with a long spout, half buried in the sand, nothing else appears; 4-5 s: the gloved hand freezes",
       "dialogue": [
         {
           "who": "narrator",
@@ -69,8 +81,28 @@
         }
       ],
       "audio_start": 3.6,
-      "status": "todo",
-      "takes": []
+      "status": "video_ok",
+      "takes": [
+        {
+          "n": 1,
+          "file": "kadrovi/s02_t1.mp4",
+          "model": "minimax-h3",
+          "seed": 41223,
+          "seconds": 150,
+          "prompt": "Style: cinematic sci-fi realism, anamorphic lens look, dusty orange Martian light, fine film grain. Location: macro view at ground level on the red Martian surface, very shallow depth of field, soft out of focus background. Camera: insert shot, static camera, rack focus from the foreground to the background, 85mm lens. Action: 0-2 s: the tiny green sprout is in sharp focus, a white spacesuit glove with orange fingertips rests on the sand beside it, the background is a smooth creamy bokeh blur where only a vague red blob and a vague brown blob can be made out; 2-4 s: focus shifts to the background and reveals a tall blooming red flower next to an old rusty watering can half buried in the sand; 4-5 s: the gloved hand freezes. Voice-over (no one on screen speaks): \"...Or not.\" Continuity: Mars surface at sunrise, low sun, orange-pink sky, thin dust haze; White and orange spacesuit with a gold reflective visor, the face is never visible; The sprout is tiny and bright green, the only green thing in the landscape.",
+          "created": "2026-10-22 18:11:00"
+        },
+        {
+          "n": 2,
+          "file": "kadrovi/s02_t2.mp4",
+          "model": "minimax-h3",
+          "seed": 41224,
+          "seconds": 130,
+          "prompt": "Style: cinematic sci-fi realism, anamorphic lens look, dusty orange Martian light, fine film grain. Location: macro view at ground level on the red Martian surface, very shallow depth of field, soft out of focus background. Camera: insert shot, static camera, rack focus from the foreground to the background, 85mm lens. Action: 0-2 s: the tiny green sprout is in sharp focus, a white spacesuit glove with orange fingertips rests on the sand beside it, the background is a smooth creamy bokeh blur where only a vague red blob and a vague brown blob can be made out; 2-4 s: focus slowly shifts to the background, the red blob turns out to be a tall blooming red flower and the brown blob an old rusty metal watering can with a long spout, half buried in the sand, nothing else appears; 4-5 s: the gloved hand freezes. Voice-over (no one on screen speaks): \"...Or not.\" Continuity: Mars surface at sunrise, low sun, orange-pink sky, thin dust haze; White and orange spacesuit with a gold reflective visor, the face is never visible; The sprout is tiny and bright green, the only green thing in the landscape.",
+          "created": "2026-10-22 18:14:00"
+        }
+      ],
+      "start_frame": "kadrovi/start/s02.png"
     }
   ]
 }

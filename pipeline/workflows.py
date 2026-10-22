@@ -62,6 +62,10 @@ def check(workflow: dict[str, Any], spec: dict[str, Any], name: str = "workflow"
                 raise WorkflowError(
                     f"{name}: čvor {t['node']} ({node.get('class_type')}) nema ulaz '{t['input']}'"
                 )
+    for slot, targets in spec.get("unlink_if_empty", {}).items():
+        for t in _targets(targets):
+            if str(t["node"]) not in workflow:
+                raise WorkflowError(f"{name}: unlink_if_empty '{slot}' pokazuje na čvor {t['node']} koji ne postoji")
     out = spec.get("output_node")
     if out is not None and str(out) not in workflow:
         raise WorkflowError(f"{name}: output_node {out} ne postoji")
@@ -75,6 +79,10 @@ def apply(workflow: dict[str, Any], spec: dict[str, Any], values: dict[str, Any]
     for slot in spec.get("required", []):
         if values.get(slot) is None:
             raise WorkflowError(f"workflow traži vrednost za slot '{slot}'")
+    for slot, targets in spec.get("unlink_if_empty", {}).items():
+        if values.get(slot) is None:
+            for t in _targets(targets):  # npr. referentna slika koja nije data: čvor ostaje bez te veze
+                wf[str(t["node"])]["inputs"].pop(t["input"], None)
     for slot, value in values.items():
         if value is None or slot not in slots:
             continue
@@ -184,15 +192,18 @@ def suggest(wf: dict[str, Any]) -> dict[str, Any]:
             out = nid
     if "prompt" not in slots:
         for nid, node in wf.items():
-            if isinstance(node.get("inputs", {}).get("text"), str):
-                add("prompt", nid, "text")
+            inputs = node.get("inputs", {})
+            key = next((k for k in ("text", "prompt") if isinstance(inputs.get(k), str)), None)
+            if key:
+                add("prompt", nid, key)
                 break
+    minimax = any(str(n.get("class_type", "")).startswith("MiniMaxH3") for n in wf.values())
     result: dict[str, Any] = {
         "slots": {k: v[0] if len(v) == 1 else v for k, v in slots.items()},
         "required": [s for s in ("prompt", "image", "audio", "control_video") if s in slots],
         "output_node": out,
         "prompt_mode": "i2v",
-        "frames": "8k+1",
+        "frames": "17k+5" if minimax else "8k+1",  # MiniMax H3 traži 17k+5 frejmova
         "size_multiple": 32,
         "max_seconds": 10,
     }

@@ -83,7 +83,7 @@ def generate(data: dict[str, Any], project: Path, client: ComfyClient, settings:
         dest = project / "kadrovi" / "start" / f"{shot['id']}.png"
         ref = shot_reference(data, project, shot, settings)
         values = {
-            "prompt": prompts.start_frame_prompt(data, shot),
+            "prompt": prompts.start_frame_prompt(data, shot, with_reference=ref is not None),
             "negative": data.get("negative"),
             "reference": ref,
             "width": shotlist.snap(w), "height": shotlist.snap(h),

@@ -1,21 +1,61 @@
 {
-  "_opis": "MiniMax H3 sa LoRA od 4 koraka, slika u video (glavni model za Day 412). Brojevi čvorova su primer. Proveri u izvezenom workflow-u da li čvor za dužinu traži frejmove (tada frames: exact ili 4k+1, kako traži čvor) ili sekunde (tada slot length_seconds). Koraci (4) i cfg ostaju kako su u workflow-u.",
+  "_opis": "Primer za MiniMax H3, slika u video. Pravi workflow je comfy-workflows/minimax-h3.api.json (napravljen po Stefanovom H3 MAIN).",
   "slots": {
-    "prompt": { "node": "6", "input": "text" },
-    "negative": { "node": "7", "input": "text" },
-    "image": { "node": "12", "input": "image" },
-    "seed": { "node": "20", "input": "seed" },
-    "width": { "node": "21", "input": "width" },
-    "height": { "node": "21", "input": "height" },
-    "frames": { "node": "21", "input": "length" },
-    "fps": { "node": "30", "input": "frame_rate" },
-    "filename_prefix": { "node": "30", "input": "filename_prefix" }
+    "prompt": {
+      "node": "9",
+      "input": "prompt"
+    },
+    "image": {
+      "node": "7",
+      "input": "image"
+    },
+    "seed": {
+      "node": "10",
+      "input": "noise_seed"
+    },
+    "width": [
+      {
+        "node": "8",
+        "input": "width"
+      },
+      {
+        "node": "9",
+        "input": "width"
+      }
+    ],
+    "height": [
+      {
+        "node": "8",
+        "input": "height"
+      },
+      {
+        "node": "9",
+        "input": "height"
+      }
+    ],
+    "frames": {
+      "node": "9",
+      "input": "length"
+    },
+    "fps": {
+      "node": "17",
+      "input": "frame_rate"
+    },
+    "filename_prefix": {
+      "node": "17",
+      "input": "filename_prefix"
+    }
   },
-  "required": ["prompt", "image"],
-  "output_node": "30",
-  "output_ext": [".mp4"],
+  "required": [
+    "prompt",
+    "image"
+  ],
+  "output_node": "17",
+  "output_ext": [
+    ".mp4"
+  ],
   "prompt_mode": "i2v",
-  "frames": "exact",
-  "size_multiple": 16,
-  "max_seconds": 10
+  "frames": "17k+5",
+  "size_multiple": 32,
+  "max_seconds": 15
 }
