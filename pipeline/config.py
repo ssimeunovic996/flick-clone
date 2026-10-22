@@ -10,6 +10,15 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 WORKFLOWS_DIR = REPO_ROOT / "comfy-workflows"
 
 
+def utf8_output() -> None:
+    """Na Windows-u je izlaz kroz pipe u kodnoj strani cp1252, pa bi 'č' oborio print."""
+    import sys
+
+    for stream in (sys.stdout, sys.stderr):
+        if (getattr(stream, "encoding", "") or "").lower().replace("-", "") != "utf8" and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def load_env(path: Path | None = None) -> None:
     """Učitava KEY=VALUE linije iz .env u os.environ (postojeće vrednosti ne gazi)."""
     path = path or REPO_ROOT / ".env"

@@ -7,6 +7,8 @@ Ažurira se posle svakog koraka: datum, šta je urađeno, gde su fajlovi, izmere
 - [x] 2026-10-21: Analiza videa i Flick aplikacije, izbor lokalnog puta. Izveštaj: https://claude.ai/artifact/U3nMybyEG5oVuhh7JwdrDY
 - [x] 2026-10-21: Reverse engineering Flick-a (`docs/FLICK-REVERSE-ENGINEERING.md`)
 - [x] 2026-10-21: Uputstvo, arhitektura i promptovi u ovom folderu
+- [x] 2026-10-22: GitHub repo `ssimeunovic996/flick-clone` (privatni)
+- [x] 2026-10-22: Kod za Fazu 1 i osnovu Faze 2 napisan i testiran bez GPU-a, grana `claude/faza-1-pipeline` (pull request). Testovi: `python -m pytest` (69 testova; 4 Blender render testa se pokreću samo Python-om koji ima `bpy`, ostali svuda)
 
 ## Faza 0: Priprema i testovi
 
@@ -22,17 +24,20 @@ Ažurira se posle svakog koraka: datum, šta je urađeno, gde su fajlovi, izmere
 
 ## Faza 1: Pipeline
 
-- [ ] 1.1 Struktura filma i `shotlist.json`
-- [ ] 1.2 Skripte: comfy_client, gen_refs, gen_voice, gen_video, assemble, run
-- [ ] 1.3 Šablon prompta
+- [x] 1.1 Format `shotlist.json` sa proverom (`pipeline/shotlist.py`), primer u `projects/primer/`
+- [x] 1.2 Skripte napisane i testirane bez GPU-a: `pipeline/` (comfy_client, gen_refs, gen_voice, gen_video, review, assemble, run)
+- [x] 1.3 Šablon prompta (`pipeline/prompts.py`, opis u `pipeline/prompt_template.md`)
+- [ ] 1.2b Workflow-i iz Faze 0 povezani: `comfy-workflows/<ime>.api.json` + `.slots.json` za `slika`, `ltx-i2v`, `ltx-a2v` (i `minimax-h3` ako ostaje); `python -m pipeline.run projects/primer check` prolazi
+- [ ] 1.2c Prvi pravi test na GPU-u: jedan kadar iz `projects/primer` (vreme: ___, VRAM: ___)
 - [ ] 1.4 Prvi film u `projects/<film>/final/film.mp4`
 
 ## Faza 2: 3D blokiranje u Blenderu
 
-- [ ] 2.1 Slika → 3D scena (grubo pa detaljno), `.ops.json`
-- [ ] 2.2 Figure likova sa animacijama
-- [ ] 2.3 `blender/camera_moves.py`
-- [ ] 2.4 Render playblast-a i dubine po kadru
+- [x] 2.0 Format `.ops.json` i `blender/stage.py` (read, still, render, build), testirano bez prozora sa Blender 4.5
+- [ ] 2.1 Slika → 3D scena (grubo pa detaljno), `.ops.json`: alat postoji, ostaje prava lokacija sa slike
+- [ ] 2.2 Figure likova: lutke od primitiva (stoji, sedi) gotove; rigovane animacije po potrebi
+- [x] 2.3 `blender/camera_moves.py`: 16 pokreta (dolly, truck, dolly zoom, crane, pan, tilt, orbit, spirala, zoom, putanja) + drhtanje iz ruke
+- [x] 2.4 Render layout-a i dubine po kadru (8k+1 frejmova); ostaje merenje brzine na GPU-u
 - [ ] 2.5 Video iz 3D-a (Union / Layout to Render / Ingredients)
 - [ ] 2.6 MCP alati za scenu
 

@@ -96,22 +96,46 @@ Cilj: ceo film iz komandne linije, a Claude Code je režiser.
 
 ### 1.1 Struktura filma
 
-**Claude Code** pravi `projects/<ime-filma>/` sa folderima `likovi/`, `lokacije/`, `audio/`, `kadrovi/`, `final/` i fajlovima `scenario.md` i `shotlist.json` (format u `docs/ARHITEKTURA.md`).
+**Claude Code** pravi `projects/<ime-filma>/` sa folderima `likovi/`, `lokacije/`, `audio/`, `kadrovi/`, `final/` i fajlovima `scenario.md` i `shotlist.json` (format u `docs/ARHITEKTURA.md`, primer u `projects/primer/`).
 
-### 1.2 Skripte
+### 1.2 Skripte (napisane 22. 10. 2026, ostaje povezivanje)
 
-**Claude Code** piše u `pipeline/`:
+Kod je već u `pipeline/` i testiran bez GPU-a. Šta radi:
 
 - `comfy_client.py`: šalje workflow na ComfyUI API, čeka rezultat, preuzima izlaz
-- `gen_refs.py`: reference likova (reference sheet) i lokacija preko tvog lokalnog modela za slike
+- `workflows.py`: workflow šabloni sa slotovima; `suggest` pravi predlog slots fajla iz izvezenog workflow-a
+- `gen_refs.py`: reference sheet-ovi likova i početne slike kadrova preko tvog lokalnog modela za slike
 - `gen_voice.py`: ElevenLabs dijalog po kadru u `audio/`
-- `gen_video.py`: za svaki kadar bira workflow (I2V, A2V, Ingredients, Union) po `shotlist.json`
-- `assemble.py`: ffmpeg montaža, prelazi, muzika, titlovi
-- `run.py`: pokreće sve redom, preskače gotove kadrove i upisuje status u `shotlist.json`
+- `gen_video.py`: za svaki kadar pokreće workflow čije ime piše u `model` (I2V, A2V, Ingredients, kontrola iz 3D-a)
+- `review.py`: tri frejma po kadru i `pregled.md`, da Claude Code sam pregleda kadrove
+- `assemble.py`: ffmpeg montaža, glas preko kadra, muzika koja se spušta dok neko govori, titlovi u `.srt`
+- `run.py`: jedna komanda; preskače gotove kadrove i upisuje status i pokušaje u `shotlist.json`
+
+**Claude Code** povezuje workflow-e iz Faze 0 (uputstvo u `comfy-workflows/README.md`):
+
+```powershell
+python -m pip install -r requirements.txt
+python -m pytest
+python -m pipeline.workflows suggest comfy-workflows/ltx-i2v.api.json > comfy-workflows/ltx-i2v.slots.json
+python -m pipeline.run projects/primer check
+python -m pipeline.run projects/primer video --shots s01 --dry-run
+```
+
+Komande za film:
+
+```powershell
+python -m pipeline.run projects/<film> check       # provera liste, workflow-a, ComfyUI-ja i cene glasa
+python -m pipeline.run projects/<film> all         # glas, reference, video, pregled
+python -m pipeline.run projects/<film> video --shots s03 --force   # novi pokušaj kadra
+python -m pipeline.run projects/<film> approve s03 --take 2
+python -m pipeline.run projects/<film> assemble    # final/film.mp4 i film.srt (--draft za radnu verziju)
+```
+
+**Gotovo kad:** `check` prolazi i jedan kadar iz `projects/primer` je generisan na GPU-u (zabeleži vreme i VRAM u `docs/STATUS.md`).
 
 ### 1.3 Šablon prompta
 
-Po Flick obrascu: stil, uloga svake reference, boja figure → lik, šta se dešava po sekundama, pravila kontinuiteta, ko govori. Šablon ide u `pipeline/prompt_template.md`.
+Po Flick obrascu: stil, uloga svake reference, boja figure → lik, šta se dešava po sekundama, pravila kontinuiteta, ko govori. Kod je u `pipeline/prompts.py`, opis u `pipeline/prompt_template.md`. Svaki pokušaj čuva svoj prompt u `shotlist.json`, pa se lako vidi šta je model dobio.
 
 ### 1.4 Prvi film
 
@@ -127,12 +151,14 @@ Ovo je naša verzija Flick-ovog Convert to 3D i 3D Stage-a. Reverse engineering 
 
 ### 2.1 Slika → 3D scena
 
-**Claude Code** gleda sliku lokacije i preko Blender MCP-a gradi scenu u dva prolaza:
+Alat je već napisan: `blender/stage.py` gradi scenu iz `.ops.json` u Blenderu bez prozora (format i komande u `blender/README.md`, primer u `blender/primeri/kuhinja.ops.json`).
+
+**Claude Code** gleda sliku lokacije i piše `lokacije/<ime>.ops.json` u dva prolaza:
 
 1. Grubo: pod, zidovi, otvori, veliki nameštaj, u metrima.
 2. Detaljno: imenovani objekti složeni od delova (npr. "krevet" = okvir, dušek, jastuci), boje, i kamera koja kadrira kao originalna slika.
 
-Sve komande se beleže u `lokacije/<ime>.ops.json`, da scena može ponovo da se sastavi. Sačuvaj i `.blend`.
+Posle svakog prolaza renderuje sliku iz kamere (`stage.py still`), poredi je sa originalom i popravlja. Za ručnu doradu postoje `stage.py build` (`.blend`) i Blender MCP.
 
 **Gotovo kad:** render iz kamere scene liči na originalnu sliku po rasporedu.
 
@@ -142,11 +168,11 @@ Rigovana lutka sa osnovnim animacijama (hod, stajanje, sedenje, govor), iz bespl
 
 ### 2.3 Kamere i pokreti
 
-**Claude Code** pravi `blender/camera_moves.py`: orbit, dolly in/out, dolly zoom, crane up/down, pan, spirala i putanja po tačkama, sa žižnom daljinom i formatom slike (16:9, 9:16, 2.39:1).
+Gotovo u `blender/camera_moves.py`: orbit, dolly in/out, truck, dolly zoom, crane up/down, pan, tilt, spirala, zoom i putanja po tačkama, sa žižnom daljinom, formatom slike (16:9, 9:16, 2.39:1) i drhtanjem iz ruke. U `.ops.json` se zadaju sa `op: camera_move`.
 
 ### 2.4 Render za kontrolu
 
-Za svaki kadar: playblast (brz render) i mapa dubine, u rezoluciji i broju frejmova koje LTX-2.5 očekuje.
+Za svaki kadar: `blender -b --python blender/stage.py -- render lokacije/<ime>.ops.json --shot s01` daje layout video (obojene figure) i mapu dubine, u rezoluciji i broju frejmova koje LTX-2.5 očekuje. Kadar u `shotlist.json` dobija `control` i `model: "ltx-control"`.
 
 ### 2.5 Video iz 3D-a
 

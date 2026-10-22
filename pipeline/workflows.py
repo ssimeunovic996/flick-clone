@@ -200,6 +200,9 @@ def suggest(wf: dict[str, Any]) -> dict[str, Any]:
 
 
 if __name__ == "__main__":
+    from .config import utf8_output
+
+    utf8_output()
     if len(sys.argv) == 3 and sys.argv[1] == "inspect":
         print(inspect(Path(sys.argv[2])))
     elif len(sys.argv) == 3 and sys.argv[1] == "suggest":

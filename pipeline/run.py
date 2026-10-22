@@ -22,7 +22,7 @@ from pathlib import Path
 
 from . import assemble, gen_refs, gen_video, gen_voice, review, shotlist, workflows
 from .comfy_client import ComfyClient, ComfyError
-from .config import Settings
+from .config import Settings, utf8_output
 from .media import MediaError
 
 
@@ -72,6 +72,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--draft", action="store_true", help="montaža i sa neodobrenim kadrovima")
     args = p.parse_args(argv)
+    utf8_output()
     args.only = set(args.shots.split(",")) if args.shots else None
 
     project = args.project.resolve()

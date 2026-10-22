@@ -37,15 +37,24 @@ D:\Flick klon\
       final\               montiran film
 ```
 
-## shotlist.json (predlog formata)
+## shotlist.json
+
+Proverava ga `pipeline/shotlist.py`; ceo primer je `projects/primer/shotlist.json`.
 
 ```json
 {
   "film": "ime-filma",
-  "format": { "aspect": "16:9", "fps": 24, "resolution": [1280, 720] },
+  "format": { "aspect": "16:9", "fps": 24, "resolution": [1280, 720], "keep_clip_audio": true },
   "style": "kratak opis vizuelnog stila",
+  "negative": "blurry, distorted face, text, watermark",
+  "default_model": "ltx-i2v",
+  "image_workflow": "slika",
+  "narrator_voice_id": "elevenlabs-voice-id",
+  "continuity": ["Night, rain outside the window in every shot"],
+  "music": { "file": "audio/muzika.mp3", "volume": 0.2, "duck": true, "fade_out": 3 },
   "characters": {
-    "marko": { "ref": "likovi/marko_sheet.png", "color": "blue", "voice_id": "elevenlabs-voice-id" }
+    "marko": { "name": "Marko", "description": "opis izgleda na engleskom", "ref": "likovi/marko_sheet.png",
+               "color": "blue", "voice_id": "elevenlabs-voice-id" }
   },
   "shots": [
     {
@@ -66,7 +75,11 @@ D:\Flick klon\
 }
 ```
 
-`status` ide redom: `todo` → `audio_ok` → `video_ok` → `approved`. U `takes` se beleži svaki pokušaj (fajl, seed, vreme generisanja, ocena).
+`status` ide redom: `todo` → `audio_ok` → `video_ok` → `approved`. U `takes` se beleži svaki pokušaj: `n`, `file`, `model`, `seed`, `seconds` (trajanje generisanja), `prompt`, `created` i `chosen` za odobren pokušaj. Pipeline sam dopisuje `audio` (fajl, trajanje), `start_frame` i `ref` lika kad ih napravi.
+
+Ostala polja kadra: `location_description` (opis za prompt), `start_frame` (sopstvena početna slika; pipeline je ne gazi), `audio_start` (sekunde do početka glasa), `model` (ime workflow-a; bez njega važi `default_model`). Narator je `"who": "narrator"`.
+
+`model` je ime workflow-a u `comfy-workflows/` (`<ime>.api.json` + `<ime>.slots.json`); detalji u `comfy-workflows/README.md`.
 
 ## 3D scena kao lista operacija
 
@@ -80,7 +93,7 @@ Po uzoru na Flick (njihov servis vraća tok operacija `add` / `remove`), scena s
 ]
 ```
 
-Tako Claude Code može scenu da sastavi iz početka, izmeni jedan objekat ili je prenese u three.js u Fazi 4.
+Tako Claude Code može scenu da sastavi iz početka, izmeni jedan objekat ili je prenese u three.js u Fazi 4. Ceo format (figure, svetla, kadrovi, pokreti kamere, keyframe-ovi, putanje) je u `blender/README.md`.
 
 ## Alati agenta (MCP), po uzoru na Flick
 

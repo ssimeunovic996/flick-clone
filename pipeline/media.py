@@ -12,7 +12,7 @@ class MediaError(RuntimeError):
 
 
 def run(cmd: list[str]) -> None:
-    proc = subprocess.run(cmd, capture_output=True, text=True)
+    proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if proc.returncode != 0:
         tail = "\n".join(proc.stderr.strip().splitlines()[-15:])
         raise MediaError(f"komanda nije uspela: {' '.join(cmd[:3])} ...\n{tail}")
@@ -21,7 +21,7 @@ def run(cmd: list[str]) -> None:
 def probe(path: Path, ffprobe: str = "ffprobe") -> dict:
     proc = subprocess.run(
         [ffprobe, "-v", "error", "-show_format", "-show_streams", "-of", "json", str(path)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     if proc.returncode != 0:
         raise MediaError(f"ffprobe ne može da pročita {path}: {proc.stderr.strip()}")
