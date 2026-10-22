@@ -19,9 +19,9 @@ U `ingredients` modu (MiniMax H3) prompt počinje sa `Reference sheet: <likovi> 
 
 `camera.shot`: extreme_wide, wide, full, medium, medium_close, close, extreme_close, over_shoulder, insert.
 
-`camera.move`: static, dolly_in, dolly_out, dolly_zoom, crane_up, crane_down, pan_left, pan_right, orbit, tracking, handheld, spiral.
+`camera.move`: static, dolly_in, dolly_out, dolly_zoom, crane_up, crane_down, pan_left, pan_right, orbit, tracking, handheld, spiral, rack_focus.
 
-Ista imena pokreta koristi i Blender (`blender/camera_moves.py`), pa kadar opisan u shotlist-u može da se napravi i kao 3D kontrolni video.
+Ista imena pokreta (osim `rack_focus`, koji je samo promena fokusa) koristi i Blender (`blender/camera_moves.py`), pa kadar opisan u shotlist-u može da se napravi i kao 3D kontrolni video.
 
 ## Saveti
 
