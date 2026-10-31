@@ -64,3 +64,13 @@ def test_latest_take_prefers_chosen():
 def test_save_keeps_serbian_letters(tmp_path):
     shotlist.save(tmp_path, {"film": "Čuvar šume"})
     assert "Čuvar šume" in (tmp_path / "shotlist.json").read_text(encoding="utf-8")
+
+
+def test_custom_prompts_must_be_text():
+    from pipeline import shotlist as sl
+
+    data = {"default_model": "m", "characters": {},
+            "shots": [{"id": "s01", "duration": 5, "action": "x", "video_prompt": "", "image_prompt": 3}]}
+    errors = sl.validate(data)
+    assert "kadar s01: image_prompt mora biti neprazan tekst" in errors
+    assert "kadar s01: video_prompt mora biti neprazan tekst" in errors

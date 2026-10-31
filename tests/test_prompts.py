@@ -92,3 +92,31 @@ def test_layout_prompt_says_how_the_character_is_turned():
     assert ("The yellow mannequin is Mila, sitting, seen from behind, with the back to the camera, "
             "on the left of the frame: yellow sweater.") in p
     assert "The yellow mannequin is Mila: yellow sweater." in prompts.layout_frame_prompt(data, shot)
+
+
+def test_claude_written_prompts_are_used_as_is():
+    # Test "Radio" (2026-10-31): prirodan pasus o pokretu, svetlu i zvuku daje mnogo bolji H3 od šablona
+    shot = dict(S02, video_prompt="  The camera slowly pushes in as she turns the dial.  ",
+                image_prompt="A lived-in old kitchen at night, tiled wall, warm lamp light.")
+    for mode in ("i2v", "a2v", "ingredients"):
+        assert prompts.video_prompt(DATA, shot, mode) == "The camera slowly pushes in as she turns the dial."
+    assert prompts.start_frame_prompt(DATA, shot) == "A lived-in old kitchen at night, tiled wall, warm lamp light."
+    with_ref = prompts.start_frame_prompt(DATA, shot, with_reference=True)
+    assert with_ref.startswith("Use the character from the reference image")
+    assert with_ref.endswith("warm lamp light.")
+
+
+def test_layout_prompt_asks_for_a_dressed_set():
+    # Qwen inače verno precrta prazan blockout, pa soba ispadne prazna kutija
+    data = {"characters": {"mila": {"name": "Mila", "color": "yellow", "description": "yellow sweater"}},
+            "style": "film grain", "continuity": ["Night"]}
+    shot = {"id": "s01", "duration": 5, "action": "0-2 s: she listens; 2-5 s: she looks up", "characters": ["mila"],
+            "location_description": "kitchen", "end_moment": "she looks at the lamp"}
+    p = prompts.layout_frame_prompt(data, shot)
+    assert "not an empty room" in p and "Opening moment: she listens." in p
+    shot["image_prompt"] = "A cramped old kitchen with green tiles and a gas stove."
+    p = prompts.layout_frame_prompt(data, shot)
+    assert p.endswith("No mannequins and no plain blocks. A cramped old kitchen with green tiles and a gas stove.")
+    assert "film grain" not in p and "Opening moment" not in p
+    end = prompts.layout_frame_prompt(data, shot, end=True)
+    assert end.endswith("gas stove. Final moment: she looks at the lamp.")

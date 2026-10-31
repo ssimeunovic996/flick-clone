@@ -84,6 +84,9 @@ def validate(data: dict[str, Any]) -> list[str]:
                 errors.append(f"{where}: dialogue[{j}].who '{who}' nije lik ni '{NARRATOR}'")
             if not isinstance(line, dict) or not str(line.get("text", "")).strip():
                 errors.append(f"{where}: dialogue[{j}].text je prazan")
+        for key in ("image_prompt", "video_prompt"):
+            if key in shot and (not isinstance(shot[key], str) or not shot[key].strip()):
+                errors.append(f"{where}: {key} mora biti neprazan tekst")
         control = shot.get("control")
         if control is not None:
             if control.get("type") not in CONTROL_TYPES:

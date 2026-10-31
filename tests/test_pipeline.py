@@ -455,3 +455,27 @@ def test_empty_env_values_use_defaults(monkeypatch):
     assert s.elevenlabs_auth_header == "xi-api-key"
     assert s.elevenlabs_model == "eleven_multilingual_v2"
     assert s.elevenlabs_task_url is None and s.elevenlabs_api_key is None
+
+
+def _mean_volume(path: Path) -> float:
+    import re
+    import subprocess
+
+    out = subprocess.run(["ffmpeg", "-v", "info", "-i", str(path), "-af", "volumedetect", "-f", "null", "-"],
+                         capture_output=True, text=True).stderr
+    return float(re.search(r"mean_volume: (-?[\d.]+) dB", out).group(1))
+
+
+def test_quiet_clip_audio_is_brought_up(tmp_path):
+    """H3 nekad napravi zvuk na -26 dB, a nekad na -16 dB; u montaži svaki kadar dobije istu glasnoću."""
+    clip = tmp_path / "tih.mp4"
+    ffmpeg("-f", "lavfi", "-i", "testsrc=size=320x192:rate=24:duration=2",
+           "-f", "lavfi", "-i", "anoisesrc=d=2:c=pink:a=0.02", "-c:v", "libx264", "-preset", "ultrafast",
+           "-pix_fmt", "yuv420p", "-shortest", str(clip))
+    data = {"format": {"resolution": [320, 180], "fps": 24}}
+    shot = {"id": "s01", "duration": 2}
+    out = assemble.segment(data, tmp_path, shot, {"file": "tih.mp4"}, tmp_path / "seg.mp4", ai33_settings())
+    assert _mean_volume(clip) < -30
+    assert _mean_volume(out) > _mean_volume(clip) + 8
+    stream = next(s for s in media.probe(out)["streams"] if s["codec_type"] == "audio")
+    assert stream["sample_rate"] == "48000"

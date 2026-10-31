@@ -1,8 +1,12 @@
 """Pravljenje promptova po Flick obrascu (opis u pipeline/prompt_template.md).
 
-Redosled delova: stil, uloga referenci, boja figure -> lik, kamera, radnja po sekundama,
-ko govori, pravila kontinuiteta. Video modeli rade bolje sa kratkim, jasnim rečenicama
-na engleskom, pa su i šabloni na engleskom.
+Najbolje rezultate daje prompt koji Claude napiše za svaki kadar posebno: `image_prompt`
+(početna slika) i `video_prompt` (video) u `shotlist.json`. Kad postoje, koriste se
+doslovno. Šablon ispod je rezervna varijanta za kadrove bez njih.
+
+Redosled delova šablona: stil, uloga referenci, boja figure -> lik, kamera, radnja po
+sekundama, ko govori, pravila kontinuiteta. Video modeli rade bolje sa jasnim rečenicama na
+engleskom, pa su i šabloni na engleskom.
 """
 
 from __future__ import annotations
@@ -71,8 +75,21 @@ def dialogue_lines(data: dict[str, Any], shot: dict[str, Any], audio_driven: boo
     return lines
 
 
+def custom(shot: dict[str, Any], key: str) -> str:
+    """Prompt koji je Claude napisao za kadar (`image_prompt` ili `video_prompt`), ili ""."""
+    text = shot.get(key)
+    return text.strip() if isinstance(text, str) else ""
+
+
+REFERENCE_PREFIX = ("Use the character from the reference image, with the exact same face, hair "
+                    "and outfit, and place them in a new single scene (one image, not a reference sheet).")
+
+
 def video_prompt(data: dict[str, Any], shot: dict[str, Any], mode: str = "i2v") -> str:
-    """mode: i2v (početna slika), a2v (zvuk vodi usne), ingredients (reference sheet), control (3D)."""
+    """mode: i2v (početna slika), a2v (zvuk vodi usne), ingredients (reference sheet), control (3D).
+    `video_prompt` kadra ide doslovno, u svakom modu."""
+    if custom(shot, "video_prompt"):
+        return custom(shot, "video_prompt")
     with_colors = mode == "control" or shot.get("control") is not None
     parts: list[str] = []
     if data.get("style"):
@@ -100,11 +117,11 @@ def video_prompt(data: dict[str, Any], shot: dict[str, Any], mode: str = "i2v") 
 
 def start_frame_prompt(data: dict[str, Any], shot: dict[str, Any], with_reference: bool = False) -> str:
     """Prompt za početnu sliku kadra (prvi frejm), za modele slike. Sa referencom (reference sheet)
-    model mora da uzme lik sa sheet-a, ali da napravi jednu scenu, a ne novi sheet."""
-    parts = []
-    if with_reference:
-        parts.append("Use the character from the reference image, with the exact same outfit, "
-                     "and place them in a new single scene (one image, not a reference sheet).")
+    model mora da uzme lik sa sheet-a, ali da napravi jednu scenu, a ne novi sheet.
+    `image_prompt` kadra zamenjuje šablon; rečenica o referenci se dodaje sama."""
+    parts = [REFERENCE_PREFIX] if with_reference else []
+    if custom(shot, "image_prompt"):
+        return " ".join(parts + [custom(shot, "image_prompt")])
     if data.get("style"):
         parts.append(f"{data['style']}.")
     if shot.get("location_description"):
@@ -152,6 +169,8 @@ def layout_frame_prompt(data: dict[str, Any], shot: dict[str, Any], end: bool = 
     `legend` su rečenice iz .ops.json (polje `label`) koje kažu šta je koji blok, a `views` kako
     kamera vidi koju figuru (gen_layout.views: okret, poza, mesto u kadru), jer model inače okrene
     lika licem ka kameri i postavi ga po svom.
+    Proba "Radio" (2026-10-31): Qwen verno precrta prazan blockout, pa soba ispadne prazna kutija.
+    Zato prompt traži da model sam doda nameštaj i detalje iz opisa (`image_prompt` kadra, ako postoji).
     """
     moment_of = "the last moment of a film shot" if end else "a film shot"
     cam = shot.get("camera") or {}
@@ -160,7 +179,9 @@ def layout_frame_prompt(data: dict[str, Any], shot: dict[str, Any], end: bool = 
         lens = f", {cam['lens_mm']} mm lens" if cam.get("lens_mm") else ""
         framing = f"framing ({SHOT_SIZES[cam['shot']]}{lens})"
     parts = [f"Image 1 is a rough 3D blockout of {moment_of}. Turn it into a real photograph of the same shot: "
-             f"keep exactly the camera angle, {framing} and the position of every object."]
+             f"keep exactly the camera angle, {framing} and the position of every person and object.",
+             "The blockout shows only the main pieces: dress the rest of the set with the realistic details, "
+             "textures and light described below, so it looks like a real lived-in place, not an empty room."]
     people = [cid for cid in shot.get("characters", []) if data["characters"][cid].get("color")]
     if people:
         source = "image 2" if with_reference else "the description"
@@ -172,6 +193,11 @@ def layout_frame_prompt(data: dict[str, Any], shot: dict[str, Any], end: bool = 
             parts.append(f"The {ch['color']} mannequin is {who}: {ch.get('description', '')}.".replace("..", "."))
     parts += [line.strip().rstrip(".") + "." for line in legend or []]
     parts.append("No mannequins and no plain blocks.")
+    if custom(shot, "image_prompt"):  # Claude-ov opis scene umesto šablona
+        parts.append(custom(shot, "image_prompt"))
+        if end:
+            parts.append(f"Final moment: {(shot.get('end_moment') or _beat(shot, -1)).strip().rstrip('.')}.")
+        return " ".join(parts)
     if shot.get("location_description"):
         parts.append(f"{shot['location_description'][0].upper()}{shot['location_description'][1:]}.")
     if data.get("style"):
