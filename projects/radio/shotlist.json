@@ -65,6 +65,15 @@
           "prompt": "Style: cinematic realism, 35mm film look, soft warm practical light, shallow depth of field. Mila: woman in her early 30s, short black bob haircut, round glasses, mustard yellow knitted sweater, dark jeans. Location: small old apartment kitchen at night, rain streaks on the dark window, warm desk lamp on the wooden table. Camera: wide shot, orbit around the subject, 24mm lens. Action: 0-3 s: Mila sits alone at the kitchen table in the lamp light while rain runs down the window; 3-5 s: the lamp flickers once and she glances up at it. Continuity: Night, rain outside the window in every shot; Warm tungsten light from the desk lamp; The desk lamp has a cone-shaped cream fabric shade on a thin dark stand; Plain beige walls and a worn dark wooden table; Faces, hair and clothing stay identical to the references.",
           "created": "2026-10-22 19:10:00",
           "note": "orbit iz 3D-a: početna + krajnja slika iz layout-a"
+        },
+        {
+          "n": 2,
+          "file": "kadrovi/s01_t2.mp4",
+          "model": "minimax-h3",
+          "seed": 61001,
+          "seconds": 142.7,
+          "prompt": "Style: cinematic realism, 35mm film look, soft warm practical light, shallow depth of field. Mila: woman in her early 30s, short black bob haircut, round glasses, mustard yellow knitted sweater, dark jeans. Location: small old apartment kitchen at night, rain streaks on the dark window, warm desk lamp on the wooden table. Camera: wide shot, orbit around the subject, 24mm lens. Action: 0-3 s: Mila sits alone at the kitchen table in the lamp light while rain runs down the window; 3-5 s: the lamp flickers once and she glances up at it. Continuity: Night, rain outside the window in every shot; Warm tungsten light from the desk lamp; The desk lamp has a cone-shaped cream fabric shade on a thin dark stand; Plain beige walls and a worn dark wooden table; Faces, hair and clothing stay identical to the references.",
+          "created": "2026-10-31 21:41:28"
         }
       ],
       "start_frame": "kadrovi/start/s01.png",
@@ -81,6 +90,18 @@
           ],
           "seconds": 35.6,
           "created": "2026-10-22 19:27:00"
+        },
+        {
+          "n": 2,
+          "file": "kadrovi/proba/s01_p2.mp4",
+          "model": "minimax-h3",
+          "seed": 61001,
+          "size": [
+            640,
+            384
+          ],
+          "seconds": 51.7,
+          "created": "2026-10-31 21:38:47"
         }
       ]
     },
