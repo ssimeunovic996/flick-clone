@@ -5,7 +5,7 @@
       "title": "MiniMax H3 (Dasiwa Hybrid V2, FL2VA + Ref2VA)"
     },
     "inputs": {
-      "unet_name": "DasiwaMinimaxH3_dasiwaHybridV2_int8_r.safetensors",
+      "unet_name": "DasiwaMinimaxH3_dasiwaHybridV4_int8.safetensors",
       "weight_dtype": "default"
     }
   },
