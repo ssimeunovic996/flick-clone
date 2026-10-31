@@ -52,6 +52,7 @@ Ažurira se posle svakog koraka: datum, šta je urađeno, gde su fajlovi, izmere
   - [x] Proba u pola rezolucije (`video --proba`, 640x384): 36 s umesto oko 2,5 min, pokret skoro isti kao u punom kadru (isti seed, ista početna i krajnja slika). `projects/radio/kadrovi/proba/s01_p1.mp4`
   - [x] 2026-10-31: H3 model prebačen na Dasiwa Hybrid V4 int8 (V2 fajl više nije u ComfyUI-ju). s01 sa istim seed-om: proba 640x384 za 52 s (sa učitavanjem modela), pun kadar 1280x736 za 143 s. Orbit i Mila isti kao sa V2, treptaj lampe kraći i prirodniji, bez artefakata. `projects/radio/kadrovi/s01_t2.mp4`, proba `kadrovi/proba/s01_p2.mp4`
   - [x] 2026-10-31: test B (isti trenutak priče, bez 3D-a): Qwen slika opremljene kuhinje 12,5 s, H3 proba 640x384 34 s, pun kadar 1280x736 127 s. Mnogo bolji od 3D verzije; na kraju Mila gleda dole umesto ka lampi i kamera priđe toliko da lampa izađe iz kadra, zvuk 10 dB tiši. Na Stefanovom računaru: `projects/_testovi/radio-b/poredjenje_A_B.mp4`. Odluka: Claude piše `image_prompt` i `video_prompt` za svaki kadar
+  - [x] 2026-10-31: „Radio 2“ (`projects/radio-2`), cela priča na nov način: Qwen 10 s i 6 s po slici, H3 125 do 129 s po kadru (382 s ukupno), bez ponavljanja. Lica ista kao na sheet-ovima, bez artefakata; Mila i deda pomeraju usne na replikama. Montaža 15 s, posle limitera vrh -1,8 dB (pre limitera 0 dB u s02). Stefan treba da presluša da li se srpske replike razumeju
   - [ ] Glas: H3 sam pravi zvuk i govor; ElevenLabs glas (ai33) za dijaloge još nije proban
 - [ ] 2.6 MCP alati za scenu
 
