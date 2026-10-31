@@ -6,7 +6,7 @@
     python -m pipeline.run projects/<film> video              video za kadrove kojima fali
     python -m pipeline.run projects/<film> video --proba      brza proba u pola rezolucije
     python -m pipeline.run projects/<film> review             frejmovi za pregled i pregled.md
-    python -m pipeline.run projects/<film> approve s01 [--take 2]
+    python -m pipeline.run projects/<film> approve s01 [s02 ...] [--take 2]
     python -m pipeline.run projects/<film> assemble [--draft] montaža u final/
     python -m pipeline.run projects/<film> all                voice, refs, video i review redom
 
@@ -76,7 +76,7 @@ def main(argv: list[str] | None = None) -> int:
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("project", type=Path, help="folder filma, npr. projects/prvi-film")
     p.add_argument("command", choices=["check", "voice", "refs", "video", "review", "approve", "assemble", "all"])
-    p.add_argument("shot", nargs="?", help="kadar za approve")
+    p.add_argument("shot", nargs="*", help="kadar (ili više kadrova) za approve")
     p.add_argument("--shots", help="lista kadrova odvojenih zarezom")
     p.add_argument("--take", type=int, help="broj pokušaja za approve (podrazumevano najnoviji)")
     p.add_argument("--force", action="store_true")
@@ -105,12 +105,16 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "approve":
             if not args.shot:
                 p.error("approve traži id kadra, npr. approve s01")
-            shot = next((s for s in data["shots"] if s["id"] == args.shot), None)
-            if shot is None:
-                p.error(f"kadar {args.shot} ne postoji")
-            take = review.approve(shot, args.take)
+            if args.take and len(args.shot) > 1:
+                p.error("--take ide uz jedan kadar")
+            by_id = {s["id"]: s for s in data["shots"]}
+            unknown = [sid for sid in args.shot if sid not in by_id]
+            if unknown:
+                p.error(f"kadar {', '.join(unknown)} ne postoji")
+            for sid in args.shot:
+                take = review.approve(by_id[sid], args.take)
+                print(f"kadar {sid}: odobren pokušaj {take['n']} ({take['file']})")
             save()
-            print(f"kadar {shot['id']}: odobren pokušaj {take['n']} ({take['file']})")
             return 0
         if args.command == "assemble":
             assemble.assemble(data, project, settings, draft=args.draft)

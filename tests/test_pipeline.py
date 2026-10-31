@@ -87,8 +87,8 @@ def test_full_run(env):
 
     # montaža traži odobrene kadrove
     assert run.main([str(project), "assemble"]) == 1
-    for sid in ("s01", "s02", "s03"):
-        assert run.main([str(project), "approve", sid]) == 0
+    assert run.main([str(project), "approve", "s01"]) == 0
+    assert run.main([str(project), "approve", "s02", "s03"]) == 0  # više kadrova odjednom
     make_audio(project / "audio" / "muzika.mp3", 3, freq=220)
     data = load(project)
     data["music"] = {"file": "audio/muzika.mp3", "volume": 0.3}
