@@ -13,6 +13,8 @@ Kad postavku ponovo sačuvaš, sledeći `refs` sam vidi da je novija i pravi sli
 
 ## Tasteri koji su dovoljni
 
+Bez numeričke tastature: Edit > Preferences > Input, uključi Emulate Numpad; tada brojevi u gornjem redu rade kao numerički (0 je kamera). Na laptopu bez srednjeg tastera uključi i Emulate 3 Button Mouse (Alt + levi klik okreće pogled), ili vuci kuglicu sa osama gore desno u prozoru.
+
 | Šta | Kako |
 |---|---|
 | Pogled kroz kameru | 0 na numeričkoj tastaturi (bez nje: meni View > Cameras > Active Camera) |
