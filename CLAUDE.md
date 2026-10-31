@@ -11,7 +11,7 @@ Ovaj fajl Claude Code čita na početku svake sesije u folderu `D:\Flick klon`. 
 ## Hardver i ograničenja (ne menjaj bez Stefanovog odobrenja)
 
 - RTX 5070 Ti, 16 GB VRAM; 32 GB RAM; Windows.
-- Sve radi lokalno na ovom računaru. Bez Remote Control-a i bez cloud GPU-a.
+- Sve radi lokalno na ovom računaru, bez cloud GPU-a. Remote Control sesija iz Claude niti je dozvoljena (Stefan, 31. 10. 2026): tada Claude Code radi ovde, u D:\Flick klon, i pokreće pipeline direktno.
 - Video modeli: **MiniMax H3 sa LoRA od 4 koraka** je Stefanov izbor (već instaliran; workflow `minimax-h3`). LTX-2.5 ostaje za A2V govor i kontrolu iz 3D-a. Detalji u `docs/ODLUKE.md`.
 - **Ne koristimo Seedance** (ni 2.5 ni druge verzije) ni ComfyUI Partner Nodes.
 - Slike: Stefanovi lokalni modeli za slike, ne Nano Banana.

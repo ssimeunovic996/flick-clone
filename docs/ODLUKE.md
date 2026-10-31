@@ -36,3 +36,6 @@ Svaka odluka: datum, šta, zašto. Nova odluka koja menja staru ide ispod, a sta
 - **Blender 5.2.3 LTS radi sa `blender/stage.py` bez izmena** (isti render i 24 testa kao na 4.5.3), pa Stefan instalira 5.2.3.
 - **Kadar s02 prepisan posle probe:** "blurry red shape" je model nacrtao kao crvenu čizmu, a imenovani cvet i kantica su izlazili oštri, pa obrt nije radio. Sada početna slika traži "smooth creamy bokeh blur where only a vague red blob and a vague brown blob can be made out", a cvet i kantica se imenuju tek u delu za video (2-4 s). Rukavica je opisana direktno ("white spacesuit glove with orange fingertips"), jer kadar nema lik pa opis lika ne ulazi u prompt.
 
+## 2026-10-31
+
+- **Remote Control je dozvoljen** (Stefan, na kartici odluke). Do sada je Claude iz niti u oblaku slao svaki ComfyUI posao preko posrednika (fajl posla, upload, provera na 50 s), pa je slika od 10 s trajala par minuta. Remote Control sesija radi na Stefanovom računaru u `D:\Flick klon` i pokreće `python -m pipeline.run` direktno; Stefan i dalje razgovara sa Claude-om u niti. Ostaje: sve lokalno, bez cloud GPU-a, jedan GPU posao u isto vreme.
