@@ -83,6 +83,9 @@ def custom(shot: dict[str, Any], key: str) -> str:
 
 REFERENCE_PREFIX = ("Use the character from the reference image, with the exact same face, hair "
                     "and outfit, and place them in a new single scene (one image, not a reference sheet).")
+REFERENCE_PREFIX_MANY = ("Use the people from the reference image (their reference sheets side by side), with "
+                         "the exact same faces, hair and outfits, and place them together in a new single scene "
+                         "(one image, not a reference sheet).")
 
 
 def video_prompt(data: dict[str, Any], shot: dict[str, Any], mode: str = "i2v") -> str:
@@ -119,7 +122,8 @@ def start_frame_prompt(data: dict[str, Any], shot: dict[str, Any], with_referenc
     """Prompt za početnu sliku kadra (prvi frejm), za modele slike. Sa referencom (reference sheet)
     model mora da uzme lik sa sheet-a, ali da napravi jednu scenu, a ne novi sheet.
     `image_prompt` kadra zamenjuje šablon; rečenica o referenci se dodaje sama."""
-    parts = [REFERENCE_PREFIX] if with_reference else []
+    many = len(shot.get("characters", [])) > 1
+    parts = [REFERENCE_PREFIX_MANY if many else REFERENCE_PREFIX] if with_reference else []
     if custom(shot, "image_prompt"):
         return " ".join(parts + [custom(shot, "image_prompt")])
     if data.get("style"):

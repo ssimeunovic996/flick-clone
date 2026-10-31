@@ -120,3 +120,11 @@ def test_layout_prompt_asks_for_a_dressed_set():
     assert "film grain" not in p and "Opening moment" not in p
     end = prompts.layout_frame_prompt(data, shot, end=True)
     assert end.endswith("gas stove. Final moment: she looks at the lamp.")
+
+
+def test_reference_sentence_for_two_people():
+    shot = dict(S03, image_prompt="Doorway at night.")
+    assert len(shot["characters"]) == 2
+    p = prompts.start_frame_prompt(DATA, shot, with_reference=True)
+    assert p.startswith("Use the people from the reference image (their reference sheets side by side)")
+    assert p.endswith("Doorway at night.")
