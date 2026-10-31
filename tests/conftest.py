@@ -16,6 +16,20 @@ import pytest
 FFMPEG = shutil.which("ffmpeg")
 needs_ffmpeg = pytest.mark.skipif(FFMPEG is None, reason="ffmpeg nije instaliran")
 
+# podešavanja sa pravog računara (Blender, ai33 adresa, ključ) ne smeju da uđu u testove
+LOCAL_ENV_KEYS = ("BLENDER", "COMFYUI_URL", "ELEVENLABS_API_KEY", "ELEVENLABS_BASE_URL", "ELEVENLABS_TASK_URL",
+                  "ELEVENLABS_AUTH_HEADER", "ELEVENLABS_MODEL", "FLICK_WORKFLOWS_DIR")
+
+
+@pytest.fixture(autouse=True)
+def no_local_env(monkeypatch):
+    """Testovi ne čitaju pravi .env, pa daju isti rezultat i na Stefanovom računaru."""
+    from pipeline import config
+
+    monkeypatch.setattr(config, "load_env", lambda path=None: None)
+    for key in LOCAL_ENV_KEYS:
+        monkeypatch.delenv(key, raising=False)
+
 
 def ffmpeg(*args: str) -> None:
     subprocess.run(["ffmpeg", "-y", "-v", "error", *args], check=True)
