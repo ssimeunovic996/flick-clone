@@ -40,6 +40,10 @@ def norm(a: Vec) -> Vec:
     return (0.0, 0.0, -1.0) if n < 1e-9 else mul(a, 1 / n)
 
 
+def dot(a: Vec, b: Vec) -> float:
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+
 def cross(a: Vec, b: Vec) -> Vec:
     return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 

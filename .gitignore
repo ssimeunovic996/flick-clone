@@ -13,6 +13,7 @@ models/
 projects/*/kadrovi/
 projects/*/final/
 projects/*/audio/
+projects/*/likovi/*.png
 projects/_testovi/
 *.mp4
 *.mov

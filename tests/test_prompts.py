@@ -70,6 +70,25 @@ def test_start_frame_prompt_with_reference():
     assert not prompts.start_frame_prompt(DATA, S02).startswith("Use the character")
 
 
+def test_end_frame_prompt_keeps_the_shot():
+    shot = {"id": "s02", "duration": 5, "action": "x", "end_moment": "the flower is now in sharp focus."}
+    p = prompts.end_frame_prompt({"style": "film grain"}, shot)
+    assert p.startswith("Keep the exact same scene, camera position, framing and lighting")
+    assert "Final moment: the flower is now in sharp focus. film grain." in p
+
+
 def test_start_frame_prompt_drops_timing():
     shot = {"id": "x", "duration": 5, "action": "0-2 s: she kneels; 2-5 s: she plants"}
     assert "Opening moment: she kneels." in prompts.start_frame_prompt({}, shot)
+
+
+def test_layout_prompt_says_how_the_character_is_turned():
+    # Qwen inače okrene lika licem ka kameri, i kad ga layout pokazuje s leđa
+    data = {"characters": {"mila": {"name": "Mila", "color": "yellow", "description": "yellow sweater"}}}
+    shot = {"id": "s01", "duration": 5, "action": "she listens", "characters": ["mila"],
+            "camera": {"shot": "medium_close", "lens_mm": 50}}
+    p = prompts.layout_frame_prompt(data, shot, end=True, views={"mila": {"view": "back", "pose": "sit", "side": "left"}})
+    assert "keep exactly the camera angle, framing (medium close-up, 50 mm lens) and" in p
+    assert ("The yellow mannequin is Mila, sitting, seen from behind, with the back to the camera, "
+            "on the left of the frame: yellow sweater.") in p
+    assert "The yellow mannequin is Mila: yellow sweater." in prompts.layout_frame_prompt(data, shot)

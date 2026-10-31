@@ -25,10 +25,10 @@ from typing import Any, Callable
 from .config import WORKFLOWS_DIR
 
 KNOWN_SLOTS = {
-    "prompt", "negative", "image", "audio", "control_video", "reference",
+    "prompt", "negative", "image", "end_image", "audio", "control_video", "reference", "reference2",
     "seed", "width", "height", "frames", "fps", "length_seconds", "filename_prefix",
 }
-UPLOAD_SLOTS = {"image", "audio", "control_video", "reference"}
+UPLOAD_SLOTS = {"image", "end_image", "audio", "control_video", "reference", "reference2"}
 
 
 class WorkflowError(ValueError):

@@ -41,7 +41,8 @@ def camera_line(shot: dict[str, Any]) -> str:
     return "Camera: " + ", ".join(p for p in parts if p) + "."
 
 
-def character_lines(data: dict[str, Any], shot: dict[str, Any], with_colors: bool) -> list[str]:
+def character_lines(data: dict[str, Any], shot: dict[str, Any], with_colors: bool,
+                    color_source: str = "the control video") -> list[str]:
     lines = []
     for cid in shot.get("characters", []):
         ch = data["characters"][cid]
@@ -49,7 +50,7 @@ def character_lines(data: dict[str, Any], shot: dict[str, Any], with_colors: boo
         color = ch.get("color")
         prefix = f"{_name(data, cid)}"
         if with_colors and color:
-            prefix += f" (the {color} figure in the control video)"
+            prefix += f" (the {color} figure in {color_source})"
         lines.append(f"{prefix}: {desc}".strip().rstrip(":") + ".")
     return lines
 
@@ -109,12 +110,89 @@ def start_frame_prompt(data: dict[str, Any], shot: dict[str, Any], with_referenc
     if shot.get("location_description"):
         parts.append(f"{shot['location_description']}.")
     parts += character_lines(data, shot, with_colors=False)
-    first_beat = shot["action"].split(";")[0].strip().rstrip(".")
-    first_beat = re.sub(r"^\d+(\.\d+)?\s*-\s*\d+(\.\d+)?\s*s:\s*", "", first_beat)  # "0-2 s:" je za video
-    parts.append(f"Opening moment: {first_beat}.")
+    parts.append(f"Opening moment: {_beat(shot, 0)}.")
     cam = shot.get("camera", {})
     if cam.get("shot"):
         parts.append(f"{SHOT_SIZES.get(cam['shot'], cam['shot']).capitalize()}.")
+    parts.append("Cinematic still frame, natural light, no text.")
+    return " ".join(parts)
+
+
+def _beat(shot: dict[str, Any], index: int) -> str:
+    """Prvi (0) ili poslednji (-1) deo radnje, bez oznake vremena ("0-2 s:" je za video)."""
+    beat = shot["action"].split(";")[index].strip().rstrip(".")
+    return re.sub(r"^\d+(\.\d+)?\s*-\s*\d+(\.\d+)?\s*s:\s*", "", beat)
+
+
+VIEWS = {"front": "facing the camera", "back": "seen from behind, with the back to the camera",
+         "profile": "seen in profile"}
+POSES = {"sit": "sitting", "stand": "standing"}
+SIDES = {"left": "on the left of the frame", "center": "in the center of the frame", "right": "on the right of the frame"}
+DEPTHS = {"foreground": "in the foreground very close to the camera, partly out of focus",
+          "background": "further back in the background"}
+
+
+def _placement(info: dict[str, str] | None) -> str:
+    """", sitting, facing the camera, on the left of the frame" iz gen_layout.views."""
+    info = info or {}
+    words = [POSES.get(info.get("pose", "")), VIEWS.get(info.get("view", "")), SIDES.get(info.get("side", "")),
+             DEPTHS.get(info.get("depth", ""))]
+    return "".join(f", {w}" for w in words if w)
+
+
+def layout_frame_prompt(data: dict[str, Any], shot: dict[str, Any], end: bool = False,
+                        with_reference: bool = False, legend: list[str] | None = None,
+                        views: dict[str, dict[str, str]] | None = None) -> str:
+    """Layout to Render: slika 1 je gruba slika iz Blendera i model je pretvara u pravu fotografiju
+    istog kadriranja, a slika 2 je sheet likova. Isto za početnu i krajnju sliku kadra.
+
+    Proba na Qwen Image 2.1 (2026-10-22): layout mora biti prva slika, a figure se moraju nazvati
+    zamenama ("placeholder ... remove it"), inače model ostavi lutku i doda lika pored nje. Za krajnju
+    sliku početna slika kao druga slika ne valja: model je prepiše i ne pomeri kameru.
+    `legend` su rečenice iz .ops.json (polje `label`) koje kažu šta je koji blok, a `views` kako
+    kamera vidi koju figuru (gen_layout.views: okret, poza, mesto u kadru), jer model inače okrene
+    lika licem ka kameri i postavi ga po svom.
+    """
+    moment_of = "the last moment of a film shot" if end else "a film shot"
+    cam = shot.get("camera") or {}
+    framing = "framing"  # bez veličine kadra Qwen često raširi kadar u srednji plan
+    if cam.get("shot") in SHOT_SIZES:
+        lens = f", {cam['lens_mm']} mm lens" if cam.get("lens_mm") else ""
+        framing = f"framing ({SHOT_SIZES[cam['shot']]}{lens})"
+    parts = [f"Image 1 is a rough 3D blockout of {moment_of}. Turn it into a real photograph of the same shot: "
+             f"keep exactly the camera angle, {framing} and the position of every object."]
+    people = [cid for cid in shot.get("characters", []) if data["characters"][cid].get("color")]
+    if people:
+        source = "image 2" if with_reference else "the description"
+        parts.append(f"The colored mannequins are only placeholders for people: remove them completely and put "
+                     f"each person from {source} in the exact place and pose of their mannequin.")
+        for cid in people:
+            ch = data["characters"][cid]
+            who = _name(data, cid) + _placement((views or {}).get(cid))
+            parts.append(f"The {ch['color']} mannequin is {who}: {ch.get('description', '')}.".replace("..", "."))
+    parts += [line.strip().rstrip(".") + "." for line in legend or []]
+    parts.append("No mannequins and no plain blocks.")
+    if shot.get("location_description"):
+        parts.append(f"{shot['location_description'][0].upper()}{shot['location_description'][1:]}.")
+    if data.get("style"):
+        parts.append(f"{data['style']}.")
+    rules = [r.rstrip(".") for r in data.get("continuity", [])]
+    if rules:
+        parts.append("; ".join(rules) + ".")
+    moment = (shot.get("end_moment") or _beat(shot, -1)) if end else _beat(shot, 0)
+    parts.append(f"{'Final' if end else 'Opening'} moment: {moment.strip().rstrip('.')}.")
+    parts.append("Cinematic still frame, no text.")
+    return " ".join(parts)
+
+
+def end_frame_prompt(data: dict[str, Any], shot: dict[str, Any]) -> str:
+    """Prompt za krajnju sliku kadra. Referenca je početna slika, pa scena, svetlo i kadriranje
+    ostaju isti, a menja se samo ono što `end_moment` kaže (npr. fokus prešao na pozadinu)."""
+    parts = ["Keep the exact same scene, camera position, framing and lighting as the reference image; "
+             "this is the same shot a few seconds later.",
+             f"Final moment: {shot['end_moment'].strip().rstrip('.')}."]
+    if data.get("style"):
+        parts.append(f"{data['style']}.")
     parts.append("Cinematic still frame, natural light, no text.")
     return " ".join(parts)
 
