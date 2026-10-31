@@ -268,3 +268,115 @@ def animate(stage: scene_ops.Stage, made: dict[str, bpy.types.Object], sid: str)
                 ob.rotation_euler = (0, 0, math.radians(st["facing"]))
                 ob.keyframe_insert("rotation_euler", frame=frame)
     scene.frame_set(1)
+
+
+# --- postavka: scena koju Stefan sam uređuje u Blenderu -------------------------------
+
+def to_three(v) -> tuple[float, float, float]:
+    """Blender (Z gore) -> three.js (Y gore)."""
+    x, y, z = C.transposed() @ Vector(v)
+    return (round(x, 4), round(y, 4), round(z, 4))
+
+
+def pose_at(stage: scene_ops.Stage, made: dict[str, bpy.types.Object], sid: str, t: float) -> None:
+    """Kamera kadra i sve figure i objekti koji se pomeraju, u trenutku t, bez keyframe-ova."""
+    shot = stage.shot(sid)
+    cam_ob = made[shot["camera"]]
+    state = stage.camera_at(sid, t)
+    aim(cam_ob, state["pos"], state["target"], state.get("roll", 0))
+    cam_ob.data.lens = state["lens"]
+    for oid, obj in stage.objects.items():
+        if obj["type"] not in ("figure", "mesh") or oid not in made:
+            continue
+        st = stage.object_at(sid, oid, t)
+        made[oid].location = to_b(st["pos"])
+        if obj["type"] == "figure":
+            made[oid].rotation_mode = "XYZ"
+            made[oid].rotation_euler = (0, 0, math.radians(st["facing"]))
+
+
+def make_postavka(stage: scene_ops.Stage, made: dict[str, bpy.types.Object], sid: str,
+                  t: float = 0.0) -> bpy.types.Object:
+    """Scena za ručno postavljanje jednog kadra: sve stoji kako je u trenutku t, bez animacije,
+    samo kamera tog kadra. Lutka se bira i pomera cela (delovi tela se ne mogu izabrati), a uz
+    svaki objekat ostaju podaci iz .ops.json (id, vrsta, label, poza), da `snapshot` zna šta je šta."""
+    scene = bpy.context.scene
+    shot = stage.shot(sid)
+    w, h = stage.resolution(sid)
+    scene.render.resolution_x, scene.render.resolution_y = w, h
+    scene.render.resolution_percentage = 100
+    scene.render.fps = stage.fps(sid)
+    scene.frame_start = scene.frame_end = 1
+    scene.frame_set(1)
+    pose_at(stage, made, sid, t)
+    cam_ob = made[shot["camera"]]
+    for oid, ob in list(made.items()):
+        obj = stage.objects.get(oid, {})
+        if obj.get("type") == "camera" and oid != shot["camera"]:
+            bpy.data.objects.remove(ob, do_unlink=True)
+            del made[oid]
+            continue
+        ob["flick_id"] = oid
+        ob["flick_type"] = obj.get("type", "light")
+        for key in ("label", "pose", "color"):
+            if obj.get(key) is not None:
+                ob[f"flick_{key}"] = str(obj[key])
+        if obj.get("type") == "figure":
+            ob["flick_height"] = float(obj.get("height", 1.75))
+            ob.empty_display_type = "CIRCLE"
+            ob.empty_display_size = 0.45
+            for part in ob.children:
+                part.hide_select = True
+    scene.camera = cam_ob
+    scene["flick_shot"] = sid
+    scene["flick_duration"] = float(shot["duration"])
+    tool = scene.tool_settings
+    tool.use_keyframe_insert_auto = False  # Stefan postavlja jedan trenutak; kraj je poseban fajl
+    for screen in bpy.data.screens:  # u Solid prikazu boje lutki kao u layout slici
+        for area in screen.areas:
+            if area.type == "VIEW_3D":
+                area.spaces[0].shading.color_type = "MATERIAL"
+    return cam_ob
+
+
+def snapshot_state() -> dict[str, Any]:
+    """Šta je u otvorenoj postavci: kamera i figure u three.js koordinatama i label-e objekata."""
+    scene = bpy.context.scene
+    cam = scene.camera
+    if cam is None:
+        raise RuntimeError("scena nema kameru (Scene > Camera)")
+    m = cam.matrix_world
+    pos = m.translation
+    forward = (m.to_3x3() @ Vector((0, 0, -1))).normalized()
+    up = (m.to_3x3() @ Vector((0, 1, 0))).normalized()
+    level = forward.to_track_quat("-Z", "Y") @ Vector((0, 1, 0))
+    roll = math.degrees(level.angle(up)) if level.length and up.length else 0.0
+    if level.cross(up).dot(forward) > 0:
+        roll = -roll
+    figures, labels = {}, []
+    for ob in scene.objects:
+        kind = ob.get("flick_type")
+        if ob.get("flick_label") and ob.visible_get():
+            labels.append(str(ob["flick_label"]))
+        # .blend iz `build` nema flick_ podatke: lutka je prazan objekat sa delovima "<ime>_glava" itd.
+        is_figure = kind == "figure" or (kind is None and ob.type == "EMPTY"
+                                         and any(c.name == f"{ob.name}_glava" for c in ob.children))
+        if not is_figure:
+            continue
+        sitting = any(c.name.startswith(f"{ob.name}_butina") for c in ob.children)
+        yaw = math.degrees(ob.matrix_world.to_euler("XYZ").z)
+        figures[str(ob.get("flick_id", ob.name))] = {
+            "pos": list(to_three(ob.matrix_world.translation)),
+            "facing": round(yaw % 360, 2),
+            "pose": str(ob.get("flick_pose", "sit" if sitting else "stand")),
+            "height": float(ob.get("flick_height", 1.75)),
+            "visible": ob.visible_get(),
+        }
+    return {
+        "shot": scene.get("flick_shot"),
+        "resolution": [scene.render.resolution_x, scene.render.resolution_y],
+        "camera": {"name": cam.name, "pos": list(to_three(pos)), "target": list(to_three(pos + forward * 3)),
+                   "lens": round(cam.data.lens, 2), "roll": round(roll, 2)},
+        "figures": figures,
+        "labels": labels,
+    }

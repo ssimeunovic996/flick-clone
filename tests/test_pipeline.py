@@ -249,6 +249,78 @@ def test_layout_views_place_figures_in_the_frame(tmp_path):
     assert (v["deda"]["side"], v["deda"]["depth"], v["deda"]["pose"]) == ("right", "background", "stand")
 
 
+def fake_blender_postavka(calls, state):
+    """Blender za postavku: `postavka` napravi .blend, `snapshot` sliku i .json sa kamerom i lutkama."""
+    def run(cmd):
+        calls.append(cmd)
+        out = Path(cmd[cmd.index("--out") + 1])
+        if "postavka" in cmd:
+            out.write_bytes(b"BLENDER")
+        else:
+            ffmpeg("-f", "lavfi", "-i", "color=c=gray:s=64x36", "-frames:v", "1", str(out))
+            blend = Path(cmd[cmd.index("--blend") + 1])
+            out.with_suffix(".json").write_text(json.dumps(state[blend.name]), encoding="utf-8")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+    return run
+
+
+def test_stefan_sets_up_the_shot_in_blender(env, monkeypatch):
+    """postavka -> Stefan uredi .blend -> refs: slika iz njegove kamere, likovi okrenuti kako ih je postavio."""
+    import os
+
+    project, comfy = env["project"], env["comfy"]
+    (project / "lokacije").mkdir()
+    (project / "lokacije" / "soba.ops.json").write_text("[]", encoding="utf-8")
+    data = load(project)
+    s03 = data["shots"][2]
+    s03.update(model="i2v-kraj", layout={"ops": "lokacije/soba.ops.json"})
+    shotlist.save(project, data)
+    # Stefan: Mila levo u prvom planu, leđima; deda desno u dubini, licem ka kameri
+    cam = {"name": "kam", "pos": [0, 1.2, 0], "target": [0, 1.2, -3], "lens": 35, "roll": 0}
+    figures = {"mila": {"pos": [-0.4, 0, -1], "facing": 180, "pose": "sit"},
+               "deda": {"pos": [1.2, 0, -5], "facing": 0, "pose": "stand"}}
+    state = {"s03_postavka.blend": {"shot": "s03", "resolution": [1280, 720], "camera": cam, "figures": figures,
+                                    "labels": ["The brown box is an old radio"]},
+             "s03_kraj.blend": {"shot": "s03", "resolution": [1280, 720], "camera": cam,
+                                "figures": {**figures, "mila": {**figures["mila"], "facing": 0}}, "labels": []}}
+    calls = []
+    monkeypatch.setattr(gen_layout, "run_blender", fake_blender_postavka(calls, state))
+
+    assert run.main([str(project), "postavka", "--shots", "s03"]) == 0
+    assert calls[-1][calls[-1].index("--") + 1:calls[-1].index("--") + 4] == ["postavka", str(project / "lokacije" / "soba.ops.json"), "--shot"]
+    assert load(project)["shots"][2]["layout"]["blend"] == "lokacije/s03_postavka.blend"
+    assert run.main([str(project), "postavka", "--shots", "s03"]) == 0  # ne pregazi postavku koju Stefan uređuje
+    assert len(calls) == 1
+
+    assert run.main([str(project), "refs", "--shots", "s03"]) == 0
+    snap = calls[-1]
+    assert snap[snap.index("--") + 1] == "snapshot" and snap[snap.index("--blend") + 1].endswith("s03_postavka.blend")
+    data = load(project)
+    s03 = data["shots"][2]
+    assert "end" not in s03["layout"] and "end_frame" not in s03  # bez s03_kraj.blend nema krajnje slike
+    text = comfy.prompts[-1]["6"]["inputs"]["text"]
+    assert "Mila, sitting, seen from behind, with the back to the camera, on the left of the frame, in the foreground" in text
+    assert "Rade, standing, facing the camera, on the right of the frame, further back in the background" in text
+    assert "The brown box is an old radio." in text
+
+    # Stefan sačuva i krajnju postavku, pa ponovo sačuva početnu: obe slike i početna slika kadra se prave iznova
+    (project / "lokacije" / "s03_kraj.blend").write_bytes(b"BLENDER")
+    start_png = project / s03["layout"]["start"]
+    old = start_png.stat().st_mtime - 60
+    os.utime(start_png, (old, old))
+    os.utime(project / s03["start_frame"], (old, old))
+    comfy.prompts.clear()
+    assert run.main([str(project), "refs", "--shots", "s03"]) == 0
+    assert [c[c.index("--blend") + 1].rsplit("/", 1)[-1].rsplit("\\", 1)[-1] for c in calls[-2:]] == [
+        "s03_postavka.blend", "s03_kraj.blend"]
+    s03 = load(project)["shots"][2]
+    assert s03["layout"]["end"] == "kadrovi/layout/s03_end.png" and s03["end_frame"] == "kadrovi/start/s03_kraj.png"
+    texts = [w["6"]["inputs"]["text"] for w in comfy.prompts]
+    assert texts[0].startswith("Image 1 is a rough 3D blockout of a film shot")
+    assert texts[1].startswith("Image 1 is a rough 3D blockout of the last moment")
+    assert "Mila, sitting, facing the camera" in texts[1]  # na kraju se okrenula
+
+
 def test_layout_without_blender_is_reported(env, monkeypatch, capsys):
     project = env["project"]
     data = load(project)

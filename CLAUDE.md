@@ -40,6 +40,7 @@ Detaljno u `docs/ARHITEKTURA.md`.
 - Repo: GitHub `ssimeunovic996/flick-clone` (privatni). Pre izmene koda pokreni `python -m pytest`; testovi ne traže GPU.
 - Pipeline: `python -m pipeline.run projects/<film> check|voice|refs|video|review|approve|assemble|all` (uputstvo u `pipeline/run.py`). Model kadra je ime workflow-a u `comfy-workflows/`.
 - Za svaki kadar sam napiši `image_prompt` i `video_prompt` u `shotlist.json` (pravila i primer u `pipeline/prompt_template.md`); šablon je samo rezerva. H3 dobija samo početnu sliku, osim kad kadar mora da završi baš određeno. 3D blokiranje koristi samo kad su bitni tačna kamera ili raspored likova, i tada scenu opremi pravim nameštajem.
+- Kad Stefan hoće sam da postavi likove i kameru: `python -m pipeline.run projects/<film> postavka --shots <kadar>`, pa on uređuje `lokacije/<kadar>_postavka.blend` (uputstvo `docs/POSTAVKA.md`); posle njegovog "gotovo" pokreni `refs`, pokaži mu početnu sliku i tek posle njegovog OK pravi video.
 - Glas košta: pre `voice` ili `all` reci Stefanu koliko karaktera ide na ElevenLabs (`check` to ispisuje).
 
 ## Šta znamo o Flick-u (reverse engineering, 21. 10. 2026)

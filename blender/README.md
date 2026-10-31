@@ -21,6 +21,8 @@ blender -b --python blender/stage.py -- build  projects/<film>/lokacije/kuhinja.
 | `still` | jedna slika iz kamere kadra u trenutku `--t`, za poređenje sa slikom lokacije |
 | `render` | `<scena>_<kadar>_layout.mp4` i `<scena>_<kadar>_depth.mp4`, sa istim brojem frejmova kao LTX video (8k+1) |
 | `build` | `.blend` sa animiranim kadrom, za ručnu doradu |
+| `postavka` | `.blend` sa scenom kadra u prvom trenutku, bez animacije, samo sa kamerom tog kadra; lutka se bira i pomera cela. Stefan u njemu postavlja likove i kameru (`docs/POSTAVKA.md`) |
+| `snapshot` | `--blend <postavka> --out <slika>.png`: slika iz kamere postavke i `.json` pored nje (kamera, lutke, label-e), za `layout.blend` u pipeline-u |
 
 Opcije: `--scale 0.5` (brz pregled u pola rezolucije), `--samples N`, `--engine cycles|eevee|workbench` (podrazumevano Cycles, na tvojoj kartici ide preko GPU-a), `--passes layout|depth`, `--depth-mode inverse|linear`, `--out`.
 

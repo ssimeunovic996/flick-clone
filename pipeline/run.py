@@ -2,6 +2,7 @@
 
     python -m pipeline.run projects/<film> check              provera liste, ComfyUI-ja i cene glasa
     python -m pipeline.run projects/<film> voice              glas za kadrove sa dijalogom (ElevenLabs)
+    python -m pipeline.run projects/<film> postavka --shots s03   .blend u kome Stefan postavlja likove i kameru
     python -m pipeline.run projects/<film> refs               reference sheet-ovi i početne slike
     python -m pipeline.run projects/<film> video              video za kadrove kojima fali
     python -m pipeline.run projects/<film> video --proba      brza proba u pola rezolucije
@@ -75,7 +76,8 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="python -m pipeline.run", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("project", type=Path, help="folder filma, npr. projects/prvi-film")
-    p.add_argument("command", choices=["check", "voice", "refs", "video", "review", "approve", "assemble", "all"])
+    p.add_argument("command", choices=["check", "voice", "postavka", "refs", "video", "review", "approve",
+                                        "assemble", "all"])
     p.add_argument("shot", nargs="*", help="kadar (ili više kadrova) za approve")
     p.add_argument("--shots", help="lista kadrova odvojenih zarezom")
     p.add_argument("--take", type=int, help="broj pokušaja za approve (podrazumevano najnoviji)")
@@ -118,6 +120,15 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "assemble":
             assemble.assemble(data, project, settings, draft=args.draft)
+            return 0
+        if args.command == "postavka":
+            problems = gen_layout.make_postavka(data, project, settings, args.only, force=args.force)
+            save()
+            if problems:
+                print("\nNisu urađeni:\n- " + "\n- ".join(problems))
+                return 1
+            print("Otvori postavku u Blenderu, namesti likove i kameru, sačuvaj (Ctrl+S), pa pokreni refs. "
+                  "Uputstvo: docs/POSTAVKA.md")
             return 0
 
         steps = ["voice", "refs", "video", "review"] if args.command == "all" else [args.command]
