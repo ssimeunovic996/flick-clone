@@ -10,6 +10,14 @@ still   jedna slika iz kamere kadra u trenutku --t, za poređenje sa slikom loka
 render  layout i dubina za kadar kao mp4, sa istim brojem frejmova kao LTX video
 build   sačuva .blend sa animiranim kadrom, da se otvori i doradi ručno
 
+Postavka (Stefan sam postavlja likove i kameru u Blenderu, uputstvo u docs/POSTAVKA.md):
+
+    blender -b --python blender/stage.py -- postavka lokacije/kuhinja.ops.json --shot s03 --out lokacije/s03_postavka.blend
+    blender -b --python blender/stage.py -- snapshot --blend lokacije/s03_postavka.blend --out kadrovi/layout/s03_start.png
+
+postavka  .blend sa scenom kadra u prvom trenutku, bez animacije, samo sa kamerom tog kadra
+snapshot  slika iz kamere otvorene postavke + .json pored nje (kamera, figure, label-e)
+
 Na Windows-u je blender obično "C:\\Program Files\\Blender Foundation\\Blender 4.5\\blender.exe".
 """
 
@@ -27,8 +35,8 @@ import scene_ops  # noqa: E402
 def parse(argv: list[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(prog="stage.py", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=["read", "still", "render", "build"])
-    p.add_argument("ops", type=Path, help="putanja do .ops.json")
+    p.add_argument("command", choices=["read", "still", "render", "build", "postavka", "snapshot"])
+    p.add_argument("ops", type=Path, nargs="?", help="putanja do .ops.json (snapshot ga ne traži)")
     p.add_argument("--shot", help="id kadra (podrazumevano prvi)")
     p.add_argument("--t", type=float, default=0.0, help="trenutak za still, u sekundama")
     p.add_argument("--passes", default="layout,depth", help="za render: layout, depth ili oba")
@@ -38,6 +46,7 @@ def parse(argv: list[str]) -> argparse.Namespace:
     p.add_argument("--depth-mode", default="inverse", choices=["inverse", "linear"])
     p.add_argument("--scale", type=float, default=1.0, help="npr. 0.5 za brz pregled u pola rezolucije")
     p.add_argument("--ffmpeg", default="ffmpeg")
+    p.add_argument("--blend", type=Path, help="za snapshot: postavka koju treba otvoriti")
     return p.parse_args(argv)
 
 
@@ -46,6 +55,11 @@ def main(argv: list[str]) -> int:
         if (getattr(stream, "encoding", "") or "").lower().replace("-", "") != "utf8" and hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
     args = parse(argv)
+    if args.command == "snapshot":
+        return snapshot(args)
+    if args.ops is None:
+        print(f"{args.command} traži putanju do .ops.json", file=sys.stderr)
+        return 2
     try:
         stage = scene_ops.Stage.load(args.ops)
     except scene_ops.OpsError as e:
@@ -63,6 +77,13 @@ def main(argv: list[str]) -> int:
     shot = stage.shot(args.shot)
     sid = shot["id"]
     made = blender_scene.build(stage)
+    if args.command == "postavka":
+        blender_scene.make_postavka(stage, made, sid, args.t)
+        base = args.ops.name.removesuffix(".ops.json").removesuffix(".json")
+        dest = (args.out or args.ops.parent / f"{sid}_postavka.blend").resolve()
+        bpy.ops.wm.save_as_mainfile(filepath=str(dest))
+        print(f"postavka: {dest} (scena {base}, kadar {sid})")
+        return 0
     blender_scene.animate(stage, made, sid)
     scene = bpy.context.scene
     scene.render.resolution_percentage = int(round(args.scale * 100))
@@ -88,6 +109,39 @@ def main(argv: list[str]) -> int:
         dest = (args.out or args.ops.parent / f"{base}.blend").resolve()
         bpy.ops.wm.save_as_mainfile(filepath=str(dest))
         print(f"blend: {dest}")
+    return 0
+
+
+def snapshot(args: argparse.Namespace) -> int:
+    """Slika iz kamere otvorene postavke i stanje scene pored nje (isto ime, .json)."""
+    import json
+
+    import blender_render  # noqa: E402 - traži bpy
+    import blender_scene  # noqa: E402
+    import bpy
+
+    if args.blend is not None:
+        if not args.blend.is_file():
+            print(f"nema postavke {args.blend}", file=sys.stderr)
+            return 2
+        bpy.ops.wm.open_mainfile(filepath=str(args.blend.resolve()))
+    if not bpy.data.filepath:
+        print("snapshot traži postavku: --blend <fajl>.blend", file=sys.stderr)
+        return 2
+    if args.out is None:
+        print("snapshot traži --out <slika>.png", file=sys.stderr)
+        return 2
+    try:
+        state = blender_scene.snapshot_state()
+    except RuntimeError as e:
+        print(e, file=sys.stderr)
+        return 2
+    scene = bpy.context.scene
+    scene.render.resolution_percentage = int(round(args.scale * 100))
+    dest = args.out.resolve()
+    blender_render.render_still(dest, scene.frame_current, args.engine, args.samples or 32)
+    dest.with_suffix(".json").write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"slika: {dest}")
     return 0
 
 

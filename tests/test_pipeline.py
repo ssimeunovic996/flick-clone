@@ -87,8 +87,8 @@ def test_full_run(env):
 
     # montaža traži odobrene kadrove
     assert run.main([str(project), "assemble"]) == 1
-    for sid in ("s01", "s02", "s03"):
-        assert run.main([str(project), "approve", sid]) == 0
+    assert run.main([str(project), "approve", "s01"]) == 0
+    assert run.main([str(project), "approve", "s02", "s03"]) == 0  # više kadrova odjednom
     make_audio(project / "audio" / "muzika.mp3", 3, freq=220)
     data = load(project)
     data["music"] = {"file": "audio/muzika.mp3", "volume": 0.3}
@@ -247,6 +247,78 @@ def test_layout_views_place_figures_in_the_frame(tmp_path):
     v = gen_layout.views(tmp_path, shot, 0.0)
     assert (v["mila"]["side"], v["mila"]["depth"], v["mila"]["view"]) == ("left", "foreground", "front")
     assert (v["deda"]["side"], v["deda"]["depth"], v["deda"]["pose"]) == ("right", "background", "stand")
+
+
+def fake_blender_postavka(calls, state):
+    """Blender za postavku: `postavka` napravi .blend, `snapshot` sliku i .json sa kamerom i lutkama."""
+    def run(cmd):
+        calls.append(cmd)
+        out = Path(cmd[cmd.index("--out") + 1])
+        if "postavka" in cmd:
+            out.write_bytes(b"BLENDER")
+        else:
+            ffmpeg("-f", "lavfi", "-i", "color=c=gray:s=64x36", "-frames:v", "1", str(out))
+            blend = Path(cmd[cmd.index("--blend") + 1])
+            out.with_suffix(".json").write_text(json.dumps(state[blend.name]), encoding="utf-8")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+    return run
+
+
+def test_stefan_sets_up_the_shot_in_blender(env, monkeypatch):
+    """postavka -> Stefan uredi .blend -> refs: slika iz njegove kamere, likovi okrenuti kako ih je postavio."""
+    import os
+
+    project, comfy = env["project"], env["comfy"]
+    (project / "lokacije").mkdir()
+    (project / "lokacije" / "soba.ops.json").write_text("[]", encoding="utf-8")
+    data = load(project)
+    s03 = data["shots"][2]
+    s03.update(model="i2v-kraj", layout={"ops": "lokacije/soba.ops.json"})
+    shotlist.save(project, data)
+    # Stefan: Mila levo u prvom planu, leđima; deda desno u dubini, licem ka kameri
+    cam = {"name": "kam", "pos": [0, 1.2, 0], "target": [0, 1.2, -3], "lens": 35, "roll": 0}
+    figures = {"mila": {"pos": [-0.4, 0, -1], "facing": 180, "pose": "sit"},
+               "deda": {"pos": [1.2, 0, -5], "facing": 0, "pose": "stand"}}
+    state = {"s03_postavka.blend": {"shot": "s03", "resolution": [1280, 720], "camera": cam, "figures": figures,
+                                    "labels": ["The brown box is an old radio"]},
+             "s03_kraj.blend": {"shot": "s03", "resolution": [1280, 720], "camera": cam,
+                                "figures": {**figures, "mila": {**figures["mila"], "facing": 0}}, "labels": []}}
+    calls = []
+    monkeypatch.setattr(gen_layout, "run_blender", fake_blender_postavka(calls, state))
+
+    assert run.main([str(project), "postavka", "--shots", "s03"]) == 0
+    assert calls[-1][calls[-1].index("--") + 1:calls[-1].index("--") + 4] == ["postavka", str(project / "lokacije" / "soba.ops.json"), "--shot"]
+    assert load(project)["shots"][2]["layout"]["blend"] == "lokacije/s03_postavka.blend"
+    assert run.main([str(project), "postavka", "--shots", "s03"]) == 0  # ne pregazi postavku koju Stefan uređuje
+    assert len(calls) == 1
+
+    assert run.main([str(project), "refs", "--shots", "s03"]) == 0
+    snap = calls[-1]
+    assert snap[snap.index("--") + 1] == "snapshot" and snap[snap.index("--blend") + 1].endswith("s03_postavka.blend")
+    data = load(project)
+    s03 = data["shots"][2]
+    assert "end" not in s03["layout"] and "end_frame" not in s03  # bez s03_kraj.blend nema krajnje slike
+    text = comfy.prompts[-1]["6"]["inputs"]["text"]
+    assert "Mila, sitting, seen from behind, with the back to the camera, on the left of the frame, in the foreground" in text
+    assert "Rade, standing, facing the camera, on the right of the frame, further back in the background" in text
+    assert "The brown box is an old radio." in text
+
+    # Stefan sačuva i krajnju postavku, pa ponovo sačuva početnu: obe slike i početna slika kadra se prave iznova
+    (project / "lokacije" / "s03_kraj.blend").write_bytes(b"BLENDER")
+    start_png = project / s03["layout"]["start"]
+    old = start_png.stat().st_mtime - 60
+    os.utime(start_png, (old, old))
+    os.utime(project / s03["start_frame"], (old, old))
+    comfy.prompts.clear()
+    assert run.main([str(project), "refs", "--shots", "s03"]) == 0
+    assert [c[c.index("--blend") + 1].rsplit("/", 1)[-1].rsplit("\\", 1)[-1] for c in calls[-2:]] == [
+        "s03_postavka.blend", "s03_kraj.blend"]
+    s03 = load(project)["shots"][2]
+    assert s03["layout"]["end"] == "kadrovi/layout/s03_end.png" and s03["end_frame"] == "kadrovi/start/s03_kraj.png"
+    texts = [w["6"]["inputs"]["text"] for w in comfy.prompts]
+    assert texts[0].startswith("Image 1 is a rough 3D blockout of a film shot")
+    assert texts[1].startswith("Image 1 is a rough 3D blockout of the last moment")
+    assert "Mila, sitting, facing the camera" in texts[1]  # na kraju se okrenula
 
 
 def test_layout_without_blender_is_reported(env, monkeypatch, capsys):
@@ -455,3 +527,37 @@ def test_empty_env_values_use_defaults(monkeypatch):
     assert s.elevenlabs_auth_header == "xi-api-key"
     assert s.elevenlabs_model == "eleven_multilingual_v2"
     assert s.elevenlabs_task_url is None and s.elevenlabs_api_key is None
+
+
+def _mean_volume(path: Path) -> float:
+    import re
+    import subprocess
+
+    out = subprocess.run(["ffmpeg", "-v", "info", "-i", str(path), "-af", "volumedetect", "-f", "null", "-"],
+                         capture_output=True, text=True).stderr
+    return float(re.search(r"mean_volume: (-?[\d.]+) dB", out).group(1))
+
+
+def _max_volume(path: Path) -> float:
+    import re
+    import subprocess
+
+    out = subprocess.run(["ffmpeg", "-v", "info", "-i", str(path), "-af", "volumedetect", "-f", "null", "-"],
+                         capture_output=True, text=True).stderr
+    return float(re.search(r"max_volume: (-?[\d.]+) dB", out).group(1))
+
+
+def test_quiet_clip_audio_is_brought_up(tmp_path):
+    """H3 nekad napravi zvuk na -26 dB, a nekad na -16 dB; u montaži svaki kadar dobije istu glasnoću."""
+    clip = tmp_path / "tih.mp4"
+    ffmpeg("-f", "lavfi", "-i", "testsrc=size=320x192:rate=24:duration=2",
+           "-f", "lavfi", "-i", "anoisesrc=d=2:c=pink:a=0.02", "-c:v", "libx264", "-preset", "ultrafast",
+           "-pix_fmt", "yuv420p", "-shortest", str(clip))
+    data = {"format": {"resolution": [320, 180], "fps": 24}}
+    shot = {"id": "s01", "duration": 2}
+    out = assemble.segment(data, tmp_path, shot, {"file": "tih.mp4"}, tmp_path / "seg.mp4", ai33_settings())
+    assert _mean_volume(clip) < -30
+    assert _mean_volume(out) > _mean_volume(clip) + 8
+    assert _max_volume(out) < -1.0  # bez klipovanja posle pojačanja
+    stream = next(s for s in media.probe(out)["streams"] if s["codec_type"] == "audio")
+    assert stream["sample_rate"] == "48000"

@@ -8,7 +8,8 @@ kao reference, ako workflow kadra prima krajnju sliku (slot `end_image`, npr. `m
 
 Kadar sa 3D blokiranjem (`layout`, vidi gen_layout.py) dobija početnu i krajnju sliku iz layout
 slika iz Blendera: isto kadriranje i raspored, a likovi sa svojih sheet-ova (Layout to Render).
-Krajnja slika čeka početnu, da se kadar pravi redom.
+Krajnja slika čeka početnu, da se kadar pravi redom. Kad je layout slika novija od početne ili
+krajnje slike (Stefan je ponovo sačuvao postavku u Blenderu), ta slika se pravi iznova.
 """
 
 from __future__ import annotations
@@ -46,7 +47,8 @@ def missing_start_frames(data: dict[str, Any], project: Path, only: set[str] | N
     for shot in data["shots"]:
         if only and shot["id"] not in only:
             continue
-        if shot.get("start_frame") and (project / shot["start_frame"]).exists():
+        if shot.get("start_frame") and (project / shot["start_frame"]).exists() \
+                and not layout_is_newer(project, shot, "start", shot["start_frame"]):
             continue
         if needs_start_frame(data, shot, directory):
             out.append(shot)
@@ -57,14 +59,22 @@ def missing_end_frames(data: dict[str, Any], project: Path, only: set[str] | Non
                        directory: Path = WORKFLOWS_DIR) -> list[dict[str, Any]]:
     out = []
     for shot in data["shots"]:
-        if (only and shot["id"] not in only) or not (shot.get("end_moment") or gen_layout.needs_end(shot)):
+        if (only and shot["id"] not in only) or not (shot.get("end_moment") or gen_layout.needs_end(shot, project)):
             continue
-        if shot.get("end_frame") and (project / shot["end_frame"]).exists():
+        if shot.get("end_frame") and (project / shot["end_frame"]).exists() \
+                and not layout_is_newer(project, shot, "end", shot["end_frame"]) \
+                and not layout_is_newer(project, shot, "start", shot["end_frame"]):
             continue
         _, spec = workflows.load(shotlist.shot_model(data, shot), directory)
         if "end_image" in spec.get("slots", {}):
             out.append(shot)
     return out
+
+
+def layout_is_newer(project: Path, shot: dict[str, Any], key: str, frame: str) -> bool:
+    """Layout slika (iz Blendera) je novija od slike kadra, pa slika kadra više ne odgovara postavci."""
+    layout = layout_image(project, shot, key)
+    return layout is not None and layout.stat().st_mtime > (project / frame).stat().st_mtime
 
 
 def layout_image(project: Path, shot: dict[str, Any], key: str) -> Path | None:
@@ -120,8 +130,8 @@ def end_frame_values(data: dict[str, Any], project: Path, shot: dict[str, Any],
     start = project / shot["start_frame"] if shot.get("start_frame") else None
     if start is None or not start.exists():
         raise NotReady(f"kadar {shot['id']}: krajnja slika čeka početnu")
-    layout = layout_image(project, shot, "end") if gen_layout.needs_end(shot) else None
-    if gen_layout.needs_end(shot) and layout is None:
+    layout = layout_image(project, shot, "end") if gen_layout.needs_end(shot, project) else None
+    if gen_layout.needs_end(shot, project) and layout is None:
         raise NotReady(f"kadar {shot['id']}: krajnja slika čeka layout iz Blendera")
     if layout is None:
         return _frame_values(data, shot, prompts.end_frame_prompt(data, shot), start, None, "kraj")

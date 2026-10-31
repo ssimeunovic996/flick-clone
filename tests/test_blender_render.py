@@ -74,3 +74,60 @@ def test_build_saves_blend(ops, tmp_path):
     out = tmp_path / "soba.blend"
     stage("build", str(ops), "--out", str(out))
     assert out.exists()
+
+
+def test_postavka_and_snapshot(ops, tmp_path):
+    """Stefan postavlja kadar u .blend; snapshot iz njega daje sliku i gde su kamera i lutke."""
+    import json
+
+    blend = tmp_path / "s01_postavka.blend"
+    stage("postavka", str(ops), "--shot", "s01", "--out", str(blend))
+    assert blend.exists()
+    out = tmp_path / "s01_start.png"
+    stage("snapshot", "--blend", str(blend), "--samples", "4", "--out", str(out))
+    assert out.exists() and out.stat().st_size > 1000
+    state = json.loads(out.with_suffix(".json").read_text(encoding="utf-8"))
+    assert state["shot"] == "s01" and state["resolution"] == [128, 72]
+    cam = state["camera"]
+    assert cam["name"] == "cam" and abs(cam["lens"] - 35) < 0.01 and abs(cam["roll"]) < 0.5
+    assert all(abs(a - b) < 1e-3 for a, b in zip(cam["pos"], [0, 1.6, 4]))
+    assert cam["target"][2] < cam["pos"][2]  # gleda ka lutki, ka -Z
+    marko = state["figures"]["marko"]
+    assert marko["pos"] == [0.0, 0.0, 0.0] and marko["pose"] == "stand" and abs(marko["facing"]) < 0.01
+
+
+def test_snapshot_reads_what_stefan_moved(ops, tmp_path):
+    import json
+
+    blend = tmp_path / "s01_postavka.blend"
+    stage("postavka", str(ops), "--shot", "s01", "--out", str(blend))
+    # kao da je Stefan pomerio lutku i okrenuo je za 90° pa sačuvao fajl
+    script = tmp_path / "pomeri.py"
+    script.write_text(
+        "import bpy, math\n"
+        "bpy.ops.wm.open_mainfile(filepath=r'%s')\n"
+        "ob = bpy.data.objects['marko']\n"
+        "ob.location = (1.0, 0.5, 0.0)\n"
+        "ob.rotation_euler = (0, 0, math.radians(90))\n"
+        "assert all(p.hide_select for p in ob.children)\n"
+        "assert bpy.context.scene.camera.name == 'cam' and ob.animation_data is None\n"
+        "bpy.ops.wm.save_mainfile()\n" % blend, encoding="utf-8")
+    proc = subprocess.run([sys.executable, str(script)], capture_output=True, text=True, timeout=600)
+    assert proc.returncode == 0, proc.stderr[-2000:]
+    out = tmp_path / "start.png"
+    stage("snapshot", "--blend", str(blend), "--samples", "2", "--out", str(out))
+    marko = json.loads(out.with_suffix(".json").read_text(encoding="utf-8"))["figures"]["marko"]
+    assert marko["pos"] == [1.0, 0.0, -0.5]  # Blender (x, y, z) -> three.js (x, z, -y)
+    assert abs(marko["facing"] - 90) < 0.01
+
+
+def test_snapshot_of_a_plain_build_file(ops, tmp_path):
+    """I .blend iz `build` (bez podataka postavke) daje gde su lutke, po imenima delova."""
+    import json
+
+    blend = tmp_path / "soba.blend"
+    stage("build", str(ops), "--shot", "s01", "--out", str(blend))
+    out = tmp_path / "start.png"
+    stage("snapshot", "--blend", str(blend), "--samples", "2", "--out", str(out))
+    state = json.loads(out.with_suffix(".json").read_text(encoding="utf-8"))
+    assert state["figures"]["marko"]["pose"] == "stand" and state["camera"]["name"] == "cam"

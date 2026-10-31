@@ -15,6 +15,11 @@ from typing import Any
 from . import media, shotlist
 from .config import Settings
 
+# Zvuk koji H3 sam napravi ujednačava se na istu glasnoću (EBU R128, -16 LUFS, vrh -1,5 dB).
+CLIP_LOUDNORM = "loudnorm=I=-16:TP=-1.5:LRA=11"
+# loudnorm sam ne drži vrh: u "Radio 2" s02 je posle montaže dostigao 0 dB. Limiter na -2 dB to sprečava.
+CLIP_LIMITER = "alimiter=limit=0.79:level=false"
+
 
 class AssembleError(RuntimeError):
     pass
@@ -59,6 +64,8 @@ def segment(data: dict[str, Any], project: Path, shot: dict[str, Any], take: dic
     vf = (f"scale={w}:{h}:force_original_aspect_ratio=increase,crop={w}:{h},"
           f"setsar=1,fps={fps},tpad=stop_mode=clone:stop_duration={dur}")
     af = "aresample=48000,aformat=channel_layouts=stereo"
+    if a_in == "0:a":  # zvuk iz H3 klipa: glasnoća mu skače od kadra do kadra (-26 do -16 dB)
+        af = f"{CLIP_LOUDNORM},{af},{CLIP_LIMITER}"  # loudnorm radi na 192 kHz, pa aresample ide posle njega
     if delay_ms and a_in != "0:a":
         af += f",adelay={delay_ms}|{delay_ms}"
     af += ",apad"

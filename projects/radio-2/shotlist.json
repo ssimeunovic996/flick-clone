@@ -1,0 +1,142 @@
+{
+  "film": "radio-2",
+  "title": "Radio",
+  "format": {
+    "aspect": "16:9",
+    "fps": 24,
+    "resolution": [
+      1280,
+      720
+    ],
+    "keep_clip_audio": true
+  },
+  "style": "cinematic realism, European drama film still, warm practical light, shallow depth of field, fine film grain",
+  "negative": "blurry, distorted face, extra fingers, text, watermark, subtitles",
+  "default_model": "minimax-h3",
+  "image_workflow": "slika",
+  "continuity": [
+    "Night, rain on the kitchen window in every shot",
+    "The only warm light is a small table lamp with a pleated cream fabric shade on a brass base",
+    "Old Balkan apartment kitchen: green and white tiled backsplash, cream painted wall cabinets, a dented kettle on an old gas stove"
+  ],
+  "characters": {
+    "mila": {
+      "name": "Mila",
+      "description": "woman in her early 30s, short black bob haircut, round glasses, mustard yellow knitted sweater, dark jeans",
+      "color": "yellow",
+      "ref": "likovi/mila_sheet.png"
+    },
+    "deda": {
+      "name": "Grandpa Rade",
+      "description": "man in his late 70s, white beard, flat grey cap, brown corduroy jacket over a checked shirt",
+      "color": "blue",
+      "ref": "likovi/deda_sheet.png"
+    }
+  },
+  "shots": [
+    {
+      "id": "s01",
+      "duration": 5,
+      "characters": [
+        "mila"
+      ],
+      "location_description": "old apartment kitchen at night, rain on the window",
+      "camera": {
+        "shot": "medium",
+        "move": "dolly_in",
+        "lens_mm": 35
+      },
+      "action": "0-3 s: Mila turns the radio dial and the lamp flickers; 3-5 s: she looks up at the lamp",
+      "dialogue": [],
+      "start_frame": "kadrovi/start/s01.png",
+      "image_prompt": "A cramped, lived-in old Balkan apartment kitchen at night. The woman, in her early 30s with a short black bob and round glasses, wearing a mustard yellow knitted sweater, sits at a small worn wooden kitchen table, leaning forward on her elbows, looking at an old wooden tube radio in front of her. Behind her: green and white tiled backsplash, cream painted wall cabinets, a dented kettle on an old gas stove, a dish rack, a paper calendar on the wall, and a window with rain running down the glass and blurred city lights outside. The only light is a small table lamp with a pleated cream fabric shade on a brass base, warm tungsten glow on her face and hands, deep shadows in the corners, faint cold blue light from the window. Medium shot at eye level, 35mm lens, shallow depth of field, fine film grain, a still from a European drama film, no text.",
+      "video_prompt": "Rain streams down the kitchen window as the camera slowly pushes in from a medium shot to a medium close-up of the woman at the table, keeping the radio and the table lamp in frame. She reaches out and gently turns the dial of the old radio; static crackles and a faint, distant melody fades in. The table lamp flickers twice, its warm light stuttering across her face. She stops turning the dial and slowly raises her eyes to the flickering lamp, and the shot ends with her looking up at it, uneasy. Soft rain patter, radio static, the quiet hum of the lamp. Natural, realistic motion, cinematic, film grain.",
+      "takes": [
+        {
+          "n": 1,
+          "file": "kadrovi/s01_t1.mp4",
+          "model": "minimax-h3",
+          "seed": 716364392,
+          "seconds": 124.8,
+          "prompt": "Rain streams down the kitchen window as the camera slowly pushes in from a medium shot to a medium close-up of the woman at the table, keeping the radio and the table lamp in frame. She reaches out and gently turns the dial of the old radio; static crackles and a faint, distant melody fades in. The table lamp flickers twice, its warm light stuttering across her face. She stops turning the dial and slowly raises her eyes to the flickering lamp, and the shot ends with her looking up at it, uneasy. Soft rain patter, radio static, the quiet hum of the lamp. Natural, realistic motion, cinematic, film grain.",
+          "created": "2026-10-31 22:02:34",
+          "chosen": true
+        }
+      ],
+      "status": "approved"
+    },
+    {
+      "id": "s02",
+      "duration": 5,
+      "characters": [
+        "mila"
+      ],
+      "location_description": "the same kitchen, close on Mila",
+      "camera": {
+        "shot": "close",
+        "move": "handheld",
+        "lens_mm": 50
+      },
+      "action": "0-2 s: Mila watches the flickering lamp; 2-5 s: she turns toward the hallway and speaks",
+      "dialogue": [
+        {
+          "who": "mila",
+          "text": "Deda, opet je počelo."
+        }
+      ],
+      "image_prompt": "Close-up at eye level of the woman, in her early 30s with a short black bob and round glasses, wearing a mustard yellow knitted sweater, sitting at an old wooden kitchen table at night, her hand resting on the dial of an old wooden tube radio at the lower edge of the frame. She looks up past the camera toward the lamp, worried. Warm tungsten light from a small table lamp with a pleated cream fabric shade on a brass base lights one side of her face; faint cold blue light from the rainy window falls on the other side. Soft and out of focus behind her: green and white tiled backsplash, cream painted wall cabinets, a dented kettle on an old gas stove. 50mm lens, shallow depth of field, fine film grain, a still from a European drama film, no text.",
+      "video_prompt": "Close-up with a subtle handheld drift. The woman keeps her eyes on the flickering lamp as the warm light trembles across her face. She turns her head slightly toward the dark hallway off screen and says quietly in Serbian: \"Deda, opet je počelo.\" Her lips move naturally with the words, then she holds her breath and listens. Rain patter on the window, faint radio static. Natural, realistic motion, cinematic, film grain.",
+      "start_frame": "kadrovi/start/s02.png",
+      "takes": [
+        {
+          "n": 1,
+          "file": "kadrovi/s02_t1.mp4",
+          "model": "minimax-h3",
+          "seed": 1084447405,
+          "seconds": 128.6,
+          "prompt": "Close-up with a subtle handheld drift. The woman keeps her eyes on the flickering lamp as the warm light trembles across her face. She turns her head slightly toward the dark hallway off screen and says quietly in Serbian: \"Deda, opet je počelo.\" Her lips move naturally with the words, then she holds her breath and listens. Rain patter on the window, faint radio static. Natural, realistic motion, cinematic, film grain.",
+          "created": "2026-10-31 22:04:42",
+          "chosen": true
+        }
+      ],
+      "status": "approved"
+    },
+    {
+      "id": "s03",
+      "duration": 5,
+      "characters": [
+        "deda",
+        "mila"
+      ],
+      "location_description": "the kitchen doorway, dark hallway behind",
+      "camera": {
+        "shot": "medium",
+        "move": "dolly_in",
+        "lens_mm": 35
+      },
+      "action": "0-3 s: Grandpa Rade steps into the doorway and speaks; 3-5 s: Mila turns toward him",
+      "dialogue": [
+        {
+          "who": "deda",
+          "text": "Znam. To nam se javlja tvoja baka."
+        }
+      ],
+      "image_prompt": "Medium shot at eye level from inside the same old Balkan apartment kitchen at night, looking toward an open doorway to a dark hallway. In the left foreground, slightly out of focus, the woman with a short black bob, round glasses and a mustard yellow knitted sweater sits at the worn wooden kitchen table, her shoulder and profile toward the camera, an old wooden tube radio beside her. In the doorway stands the old man in his late 70s with a white beard, flat grey cap and brown corduroy jacket over a checked shirt, half in shadow, his face lit by the warm lamp light, a gentle knowing smile. On the table on the right: a small table lamp with a pleated cream fabric shade on a brass base, glowing warm. Along the wall: green and white tiled backsplash, cream painted wall cabinets, a dented kettle on an old gas stove. Rain on the dark window. 35mm lens, shallow depth of field, fine film grain, a still from a European drama film, no text.",
+      "video_prompt": "The camera slowly pushes in toward the doorway. The old man steps out of the dark hallway into the warm lamp light, rests one hand on the door frame and smiles gently at the woman. He says softly in Serbian: \"Znam. To nam se javlja tvoja baka.\" The woman slowly turns her head toward him, her worried face softening into a small smile. The lamp flickers once more. Rain patter, the creak of the old wooden floor, faint radio static. Natural, realistic motion, cinematic, film grain.",
+      "start_frame": "kadrovi/start/s03.png",
+      "takes": [
+        {
+          "n": 1,
+          "file": "kadrovi/s03_t1.mp4",
+          "model": "minimax-h3",
+          "seed": 985606334,
+          "seconds": 128.6,
+          "prompt": "The camera slowly pushes in toward the doorway. The old man steps out of the dark hallway into the warm lamp light, rests one hand on the door frame and smiles gently at the woman. He says softly in Serbian: \"Znam. To nam se javlja tvoja baka.\" The woman slowly turns her head toward him, her worried face softening into a small smile. The lamp flickers once more. Rain patter, the creak of the old wooden floor, faint radio static. Natural, realistic motion, cinematic, film grain.",
+          "created": "2026-10-31 22:06:51",
+          "chosen": true
+        }
+      ],
+      "status": "approved"
+    }
+  ]
+}

@@ -2,11 +2,12 @@
 
     python -m pipeline.run projects/<film> check              provera liste, ComfyUI-ja i cene glasa
     python -m pipeline.run projects/<film> voice              glas za kadrove sa dijalogom (ElevenLabs)
+    python -m pipeline.run projects/<film> postavka --shots s03   .blend u kome Stefan postavlja likove i kameru
     python -m pipeline.run projects/<film> refs               reference sheet-ovi i početne slike
     python -m pipeline.run projects/<film> video              video za kadrove kojima fali
     python -m pipeline.run projects/<film> video --proba      brza proba u pola rezolucije
     python -m pipeline.run projects/<film> review             frejmovi za pregled i pregled.md
-    python -m pipeline.run projects/<film> approve s01 [--take 2]
+    python -m pipeline.run projects/<film> approve s01 [s02 ...] [--take 2]
     python -m pipeline.run projects/<film> assemble [--draft] montaža u final/
     python -m pipeline.run projects/<film> all                voice, refs, video i review redom
 
@@ -75,8 +76,9 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="python -m pipeline.run", description=__doc__,
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("project", type=Path, help="folder filma, npr. projects/prvi-film")
-    p.add_argument("command", choices=["check", "voice", "refs", "video", "review", "approve", "assemble", "all"])
-    p.add_argument("shot", nargs="?", help="kadar za approve")
+    p.add_argument("command", choices=["check", "voice", "postavka", "refs", "video", "review", "approve",
+                                        "assemble", "all"])
+    p.add_argument("shot", nargs="*", help="kadar (ili više kadrova) za approve")
     p.add_argument("--shots", help="lista kadrova odvojenih zarezom")
     p.add_argument("--take", type=int, help="broj pokušaja za approve (podrazumevano najnoviji)")
     p.add_argument("--force", action="store_true")
@@ -105,15 +107,28 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "approve":
             if not args.shot:
                 p.error("approve traži id kadra, npr. approve s01")
-            shot = next((s for s in data["shots"] if s["id"] == args.shot), None)
-            if shot is None:
-                p.error(f"kadar {args.shot} ne postoji")
-            take = review.approve(shot, args.take)
+            if args.take and len(args.shot) > 1:
+                p.error("--take ide uz jedan kadar")
+            by_id = {s["id"]: s for s in data["shots"]}
+            unknown = [sid for sid in args.shot if sid not in by_id]
+            if unknown:
+                p.error(f"kadar {', '.join(unknown)} ne postoji")
+            for sid in args.shot:
+                take = review.approve(by_id[sid], args.take)
+                print(f"kadar {sid}: odobren pokušaj {take['n']} ({take['file']})")
             save()
-            print(f"kadar {shot['id']}: odobren pokušaj {take['n']} ({take['file']})")
             return 0
         if args.command == "assemble":
             assemble.assemble(data, project, settings, draft=args.draft)
+            return 0
+        if args.command == "postavka":
+            problems = gen_layout.make_postavka(data, project, settings, args.only, force=args.force)
+            save()
+            if problems:
+                print("\nNisu urađeni:\n- " + "\n- ".join(problems))
+                return 1
+            print("Otvori postavku u Blenderu, namesti likove i kameru, sačuvaj (Ctrl+S), pa pokreni refs. "
+                  "Uputstvo: docs/POSTAVKA.md")
             return 0
 
         steps = ["voice", "refs", "video", "review"] if args.command == "all" else [args.command]
